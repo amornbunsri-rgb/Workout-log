@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Workout Progress</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#fbfaf8" />
+<link rel="icon" type="image/png" href="icons/favicon-64.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Workout" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="workout-log-style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  // Same FOUC-prevention as the main app: applied before the stylesheet paints,
+  // and reads the exact same mode key so this page opens in whichever
+  // light/dark mode the main app is currently using.
+  (function () {
+    try {
+      var saved = localStorage.getItem("workout-log-mode-v1");
+      var mode = (saved === 'light' || saved === 'dark') ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', mode);
+    } catch (e) { /* ignore */ }
+  })();
+</script>
+<style>
+  .import-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .import-row input[type="file"] { display: none; }
+  .empty-state { text-align: center; padding: 50px 16px; color: var(--text-muted); }
+  .empty-state i { font-size: 32px; margin-bottom: 12px; display: block; color: var(--border-strong); }
+  .empty-state .text-btn { margin-top: 14px; }
+  .graph-layout { display: flex; flex-direction: column; gap: 16px; }
+  .exercise-nav { width: 100%; }
+  .graph-main { width: 100%; min-width: 0; }
+  .ex-nav-item {
+    display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 13.5px;
+  }
+  .ex-nav-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .ex-nav-item > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .ex-nav-item .badge { flex-shrink: 0; font-size: 10.5px; padding: 2px 7px; }
+  .ex-nav-item .count { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--text-muted); }
+  .ex-nav-item:hover { background: var(--surface-1); }
+  .ex-nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 700; }
+  /* the shared .tab style now assumes a per-item colour (category tabs) —
+     these range tabs have no per-item colour, so they need their own look */
+  #rangeTabs.tabs .tab { color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border-strong); text-shadow: none; }
+  #rangeTabs.tabs .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: none; }
+  .period-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 4px 0 14px; }
+  .chart-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+  .chart-card canvas { max-width: 100%; }
+  .heatmap-scroll { overflow-x: auto; padding-bottom: 4px; }
+  .heatmap-grid { display: flex; gap: 3px; width: fit-content; }
+  .heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+  .heatmap-month-label { font-size: 10px; color: var(--text-muted); height: 14px; line-height: 14px; white-space: nowrap; }
+  .heatmap-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--surface-1); }
+  .heatmap-cell.hm-future { background: transparent; }
+  .heatmap-cell.hm-0 { background: var(--surface-1); border: 1px solid var(--border); }
+  .heatmap-cell.hm-1 { background: var(--accent); opacity: 0.25; }
+  .heatmap-cell.hm-2 { background: var(--accent); opacity: 0.48; }
+  .heatmap-cell.hm-3 { background: var(--accent); opacity: 0.72; }
+  .heatmap-cell.hm-4 { background: var(--accent); opacity: 1; }
+  .heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 11px; color: var(--text-muted); }
+  .heatmap-legend .heatmap-cell { width: 11px; height: 11px; }
+  #entriesList .edit-row { align-items: stretch; flex-direction: column; gap: 4px; }
+  #entriesList .name { line-height: 1.5; flex: 0 0 auto; }
+  #entriesList .entry-chips-col { width: 100%; }
+  #entriesList .entry-sets { margin-bottom: 0; }
+  #entriesList .entry-notes { margin-top: 2px; }
+  .totals-row { display: flex; gap: 18px; margin-bottom: 4px; flex-wrap: wrap; }
+  .totals-row .stat { font-size: 12px; color: var(--text-muted); }
+  .totals-row .stat b { font-size: 16px; color: var(--text-primary); display: block; }
+  .set-chip {
+    display: inline-block; font-size: 11.5px; padding: 2px 7px; border-radius: 10px; margin: 2px 4px 2px 0;
+    background: var(--surface-1); border: 1px solid var(--border); color: var(--text-primary);
+  }
+  .stat-line { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .stat-line:last-child { border-bottom: none; }
+  .stat-line .val { font-weight: 700; color: var(--accent); }
+
+  /* bottom action bar + icon buttons in the settings panel now live in workout-log-style.css */
+  .menu-panel .import-row { padding: 2px 4px 6px; }
+
+  /* ---- workout search ---- */
+  .search-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .search-row input[type="text"] { flex: 1; min-width: 0; width: auto; color: var(--text-primary); }
+  .search-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-date-btn" style="cursor:default;">Progress</div>
+  <div class="header-btns">
+    <a class="menu-btn" href="workout-log-standalone.html" target="workoutGraphWindow" aria-label="Back to workout log home" title="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
+    <a class="menu-btn" href="workout-log-standalone.html#history" target="workoutGraphWindow" aria-label="View calendar &amp; history" title="Calendar &amp; history"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></a>
+    <button class="menu-btn" id="menuBtn" aria-label="Settings" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+    <div class="menu-panel hidden" id="menuPanel">
+      <div class="import-row">
+        <button class="icon-btn" id="importBtn" type="button" aria-label="Load / refresh backup" title="Load / refresh backup"><i class="fa-solid fa-file-import" aria-hidden="true"></i></button>
+        <input type="file" id="importFile" accept="application/json" />
+      </div>
+      <span id="importStatus" class="empty" style="padding:6px 4px 0; display:block;"></span>
+      <div class="theme-section">
+        <div class="theme-label">Appearance</div>
+        <div class="mode-toggle" id="modeToggle">
+          <button class="mode-btn" data-mode="light" type="button"><i class="fa-solid fa-sun" aria-hidden="true"></i> Light</button>
+          <button class="mode-btn" data-mode="dark" type="button"><i class="fa-solid fa-moon" aria-hidden="true"></i> Dark</button>
+        </div>
+      </div>
+      <div class="theme-section">
+        <div class="theme-label">Units</div>
+        <div class="mode-toggle" id="unitsToggle">
+          <button class="mode-btn" data-units="metric" type="button">Metric</button>
+          <button class="mode-btn" data-units="imperial" type="button">Imperial</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs" id="rangeTabs" style="margin-bottom: 18px;">
+  <button class="tab active" data-range="week">Week</button>
+  <button class="tab" data-range="month">Month</button>
+  <button class="tab" data-range="year">Year</button>
+  <button class="tab" data-range="stats">Stats</button>
+</div>
+
+<div id="emptyState" class="empty-state hidden">
+  <i class="fa-solid fa-chart-column" aria-hidden="true"></i>
+  <div>No workout data connected yet.</div>
+  <div>Open this page from the main app's progress-graph button and your data loads automatically. Opened another way? Load the backup file from the main app's Export &gt; Export backup — it's remembered after that.</div>
+  <div>Loading automatically? Give it a moment, or check that pop-ups aren't blocked for this page.</div>
+  <button class="text-btn" id="importBtnEmpty"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i> Load backup</button>
+</div>
+
+<div class="chart-card hidden" id="activityHeatmapCard">
+  <div class="section-label" style="margin-bottom:8px;">Activity</div>
+  <div class="heatmap-scroll">
+    <div class="heatmap-grid" id="activityHeatmapGrid"></div>
+  </div>
+  <div class="heatmap-legend">
+    <span>Less</span>
+    <span class="heatmap-cell hm-0"></span>
+    <span class="heatmap-cell hm-1"></span>
+    <span class="heatmap-cell hm-2"></span>
+    <span class="heatmap-cell hm-3"></span>
+    <span class="heatmap-cell hm-4"></span>
+    <span>More</span>
+  </div>
+</div>
+
+<div id="mainView" class="graph-layout hidden">
+  <div class="exercise-nav">
+    <div class="section-label-row">
+      <div class="section-label">Workouts</div>
+      <button class="icon-btn" id="exerciseSearchBtn" type="button" aria-label="Search workouts" title="Search workouts"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+    </div>
+    <div class="search-row hidden" id="exerciseSearchRow">
+      <input type="text" id="exerciseSearchInput" placeholder="Search workouts or categories…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search workouts" />
+      <button class="icon-btn" id="exerciseSearchClear" type="button" aria-label="Clear search" title="Clear search"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div id="exerciseNavList" class="scroll-list" style="max-height:220px;"></div>
+  </div>
+
+  <div class="graph-main">
+    <div class="section-label-row">
+      <div class="section-label" id="selectedExerciseLabel">&nbsp;</div>
+    </div>
+
+    <div id="periodView">
+      <div class="period-nav">
+        <button class="icon-btn" id="periodPrevBtn" aria-label="Previous period"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
+        <span id="periodLabel" class="text-btn" style="cursor:default;"></span>
+        <button class="icon-btn" id="periodNextBtn" aria-label="Next period"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
+      </div>
+
+      <div class="totals-row">
+        <div class="stat">Entries<b id="totalEntries">0</b></div>
+        <div class="stat" id="totalSetsLabelWrap">Total sets<b id="totalSets">0</b></div>
+        <div class="stat" id="totalRepsLabelWrap">Total reps<b id="totalReps">0</b></div>
+        <div class="stat hidden" id="totalElevLabelWrap">Elevation<b id="totalElev">0</b></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="section-label" id="setsChartLabel" style="margin-bottom:8px;">Sets</div>
+        <canvas id="setsChart" height="140"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="section-label" id="repsChartLabel" style="margin-bottom:8px;">Reps per set</div>
+        <canvas id="repsChart" height="140"></canvas>
+      </div>
+
+      <div class="chart-card hidden" id="elevChartCard">
+        <div class="section-label" style="margin-bottom:8px;">Elevation</div>
+        <canvas id="elevChart" height="140"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="section-label" style="margin-bottom:8px;">Logged workouts this period</div>
+        <div id="entriesList" class="scroll-list" style="max-height:320px;"></div>
+      </div>
+    </div>
+
+    <div id="statsView" class="hidden">
+      <div class="chart-card">
+        <div class="section-label" style="margin-bottom:10px;">All-time statistics</div>
+        <div class="totals-row" style="margin-bottom:2px;">
+          <div class="stat">Sessions<b id="statSessions">0</b></div>
+          <div class="stat" id="statSetsLabelWrap">Total sets<b id="statSets">0</b></div>
+          <div class="stat" id="statRepsLabelWrap">Total reps<b id="statReps">0</b></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="section-label" style="margin-bottom:10px;">Bests</div>
+        <div id="statBests"></div>
+      </div>
+      <div class="chart-card hidden" id="bwChartCard">
+        <div class="section-label" style="margin-bottom:8px;">Strength vs bodyweight</div>
+        <canvas id="bwChart" height="170"></canvas>
+        <div class="empty" style="padding:8px 0 0; font-size:12px;">Best added load per session (left axis, below 0 = assisted) against your bodyweight (right axis). Hover a point to see it as a % of bodyweight.</div>
+      </div>
+      <div class="chart-card">
+        <div class="section-label" style="margin-bottom:10px;">History</div>
+        <div id="statHistory"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="workout-shared.js"></script>
+<script src="workout-graph.js"></script>
+<script src="workout-pwa.js" defer></script>
+</body>
+</html>

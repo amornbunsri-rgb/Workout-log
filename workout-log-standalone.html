@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Workout Log</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#fbfaf8" />
+<link rel="icon" type="image/png" href="icons/favicon-64.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Workout" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="workout-log-style.css" />
+<script>
+  // Applied before the stylesheet paints anything, so there's no flash of the wrong theme.
+  (function () {
+    try {
+      var saved = localStorage.getItem("workout-log-mode-v1");
+      var mode = (saved === 'light' || saved === 'dark') ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', mode);
+    } catch (e) { /* ignore */ }
+  })();
+</script>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <button type="button" id="profileBtn" class="profile-btn" aria-label="Profile" title="Profile"><i class="fa-solid fa-user" aria-hidden="true"></i></button>
+  </div>
+  <div class="header-btns">
+    <button class="menu-btn" id="pageNavBtn" aria-label="View calendar &amp; history" title="Calendar &amp; history"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+    <button class="menu-btn" id="configBtn" aria-label="Manage categories &amp; blocks" title="Categories &amp; blocks"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></button>
+    <button class="menu-btn" id="skillsBtn" aria-label="Skill progressions" title="Skill progressions"><i class="fa-solid fa-medal" aria-hidden="true"></i></button>
+    <a class="menu-btn" id="graphLink" href="workout-graph.html" target="workoutGraphWindow" aria-label="View progress graphs" title="Progress graphs"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></a>
+    <button class="menu-btn" id="menuBtn" aria-label="Settings &amp; backup" title="Settings &amp; backup"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
+    <div class="menu-panel hidden" id="menuPanel">
+      <div class="menu-icon-row">
+        <button class="icon-btn" id="exportXlsxBtn" type="button" aria-label="Export to Excel" title="Export to Excel"><i class="fa-solid fa-file-excel" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="exportJsonBtn" type="button" aria-label="Export backup" title="Export backup"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></button>
+        <span class="menu-icon-sep" aria-hidden="true"></span>
+        <button class="icon-btn" id="importJsonBtn" type="button" aria-label="Import backup" title="Import backup"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i></button>
+      </div>
+      <div class="theme-section">
+        <div class="theme-label">Colour theme</div>
+        <div class="theme-swatches" id="themeSwatches"></div>
+      </div>
+      <div class="theme-section">
+        <div class="theme-label">Appearance</div>
+        <div class="mode-toggle" id="modeToggle">
+          <button type="button" class="mode-btn" data-mode="light"><i class="fa-solid fa-sun" aria-hidden="true"></i> Light</button>
+          <button type="button" class="mode-btn" data-mode="dark"><i class="fa-solid fa-moon" aria-hidden="true"></i> Dark</button>
+        </div>
+      </div>
+      <div class="theme-section">
+        <div class="theme-label">Units</div>
+        <div class="mode-toggle" id="unitsToggle">
+          <button type="button" class="mode-btn" data-units="metric">Metric</button>
+          <button type="button" class="mode-btn" data-units="imperial">Imperial</button>
+        </div>
+      </div>
+      <div class="collapsible">
+        <button class="collapsible-toggle" id="rearrangeToggleBtn"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> Rearrange sections</button>
+        <div class="hidden" id="settingsListWrap">
+          <div id="settingsList"></div>
+        </div>
+      </div>
+      <div class="collapsible">
+        <button class="collapsible-toggle" id="resetToggleBtn"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> Reset</button>
+        <div class="hidden" id="resetWrap">
+          <div class="reset-options" id="resetOptions">
+            <label class="reset-option"><input type="checkbox" id="resetOptData" /> Logged entries (workout history)</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptLists" /> Categories &amp; exercises</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptBlocks" /> Blocks</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptLayout" /> Section layout (rearrange)</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptAppearance" /> Appearance (theme &amp; sets count)</label>
+          </div>
+          <button type="button" class="danger-btn outline" id="resetSelectedBtn">Reset selected</button>
+          <button type="button" class="danger-btn" id="resetAllBtn">Reset everything</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="importFile" accept="application/json" />
+</header>
+
+<div id="mainContent">
+  <div class="page" id="page-home">
+
+  <div class="module" id="module-category">
+    <div class="section-label-row">
+      <div class="section-label">Category</div>
+      <button class="icon-btn" id="editCatBtn" aria-label="Manage categories" title="Manage categories"><i class="fa-solid fa-pencil" aria-hidden="true"></i></button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div class="module" id="module-exercise">
+    <div class="exercise-header-row">
+      <div class="section-label exercise-title-row">
+        <span>Exercise</span>
+        <span class="date-wrap">
+          <button type="button" id="headerDateBtn" class="date-btn" aria-label="Pick a date"></button>
+          <input type="date" id="dateInput" class="hidden-date-input" />
+        </span>
+      </div>
+      <div class="exercise-tools">
+        <span class="exercise-tools-left">
+          <span class="block-pill-wrap">
+            <select id="blockSelect" class="block-pill-select"></select>
+            <i class="fa-solid fa-chevron-down block-pill-arrow" aria-hidden="true"></i>
+          </span>
+        </span>
+        <span class="exercise-tools-icons">
+        <button class="icon-btn" id="exerciseSearchBtn" aria-label="Search exercises" title="Search exercises"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+        <button class="sort-btn active" id="sortToggleBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="editExBtn" aria-label="Edit exercises"><i class="fa-solid fa-pencil" aria-hidden="true"></i></button>
+        </span>
+      </div>
+    </div>
+    <div class="exercise-grid" id="exerciseGrid"></div>
+    <input type="text" id="exerciseText" placeholder="Exercise name" class="hidden" />
+    <div class="edit-panel hidden" id="exEditPanel">
+      <div id="exEditList"></div>
+      <div class="add-inline" id="addExInline">
+        <input type="color" id="newExColor" value="#e0a86b" title="Exercise color" />
+        <input type="text" id="newExInput" placeholder="New exercise name" />
+        <button class="iso-toggle" id="newExIsoBtn" type="button">REPS</button>
+        <button class="iso-toggle" id="newExUniBtn" type="button">BI</button>
+        <button id="addExBtn">Add</button>
+      </div>
+    </div>
+    <div class="modifiers-row" id="modifiersRow"></div>
+  </div>
+
+  <div class="module" id="module-metrics">
+    <div class="section-label metrics-title" id="metricsLabel">Reps &amp; eccentric (sec) &amp; kg per set</div>
+    <div class="metrics-header-row">
+      <button type="button" class="pill-select-btn" id="supersetToggleBtn"><i class="fa-solid fa-link" aria-hidden="true"></i> Superset</button>
+      <div class="metrics-header-actions">
+        <button type="button" class="pill-select-btn hidden" id="holdModeToggleBtn" aria-pressed="false" aria-label="Attempts mode (tap to toggle)" title="Attempts mode: log separate hold attempts instead of working sets"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Attempts</button>
+        <button type="button" class="icon-btn" id="toolsBtn" aria-label="Timer, stopwatch &amp; metronome" aria-expanded="false" title="Timer, stopwatch &amp; metronome"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></button>
+        <button type="button" class="icon-btn" id="clearMetricsBtn" aria-label="Clear inputs" title="Clear inputs"><i class="fa-solid fa-eraser" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="sets-wrap" id="setsWrap">
+      <div class="sets-grid" id="setsGrid"></div>
+      <div class="add-set-row">
+        <button type="button" class="text-btn text-btn-icon" id="setsScrollUpBtn" aria-label="Show earlier sets" title="Show earlier sets"><i class="fa-solid fa-angle-up" aria-hidden="true"></i></button>
+        <button type="button" class="text-btn" id="addSetBtn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add set</button>
+        <button type="button" class="text-btn text-btn-danger" id="removeSetBtn"><i class="fa-solid fa-minus" aria-hidden="true"></i> Remove set</button>
+        <button type="button" class="text-btn text-btn-icon" id="setsScrollDownBtn" aria-label="Show later sets" title="Show later sets"><i class="fa-solid fa-angle-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="sets-wrap hidden" id="attemptsWrap">
+      <div class="sets-grid" id="attemptsGrid"></div>
+      <div class="add-set-row">
+        <button type="button" class="text-btn text-btn-icon" id="attemptsScrollUpBtn" aria-label="Show earlier attempts" title="Show earlier attempts"><i class="fa-solid fa-angle-up" aria-hidden="true"></i></button>
+        <button type="button" class="text-btn" id="addAttemptBtn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add attempt</button>
+        <button type="button" class="text-btn text-btn-danger" id="removeAttemptBtn"><i class="fa-solid fa-minus" aria-hidden="true"></i> Remove attempt</button>
+        <button type="button" class="text-btn text-btn-icon" id="attemptsScrollDownBtn" aria-label="Show later attempts" title="Show later attempts"><i class="fa-solid fa-angle-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="sets-grid hidden" id="distanceRow">
+      <div class="distance-row-pair">
+        <div class="set-field">
+          <label for="distanceInput" id="distanceInputLabel">Distance (KM)</label>
+          <input type="number" min="0" step="0.01" id="distanceInput" placeholder="0.0" />
+        </div>
+        <div class="set-field">
+          <label for="timeInput" id="timeInputLabel">Time</label>
+          <input type="text" id="timeInput" placeholder="0:00" />
+        </div>
+      </div>
+      <div class="distance-row-pair">
+        <div class="set-field">
+          <label for="ruckKgInput" id="ruckKgInputLabel">Rucking (kg)</label>
+          <input type="number" min="0" step="0.5" id="ruckKgInput" placeholder="0" />
+        </div>
+        <div class="set-field">
+          <label for="elevationInput" id="elevationInputLabel">Elevation (m)</label>
+          <input type="number" min="0" step="1" id="elevationInput" placeholder="0" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="module" id="module-notes">
+    <div class="section-label">Notes</div>
+    <textarea id="notesInput" placeholder="Anything else — tempo, how it felt..."></textarea>
+  </div>
+
+  <div class="module" id="module-addButton">
+    <div id="err" class="err hidden"></div>
+    <div class="add-row">
+      <button id="addBtn"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add entry</button>
+    </div>
+  </div>
+
+  </div>
+  <div class="page hidden" id="page-history">
+
+  <div class="module" id="module-calendar">
+    <div class="calendar-card">
+      <div class="cal-header">
+        <button class="nav-btn" id="calPrev" aria-label="Previous month"><i class="fa-solid fa-angle-left" aria-hidden="true"></i></button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="text-btn" id="calToday">Today</button>
+        <button class="nav-btn" id="calNext" aria-label="Next month"><i class="fa-solid fa-angle-right" aria-hidden="true"></i></button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <div class="module" id="module-entries">
+    <div id="entries"></div>
+  </div>
+
+  </div>
+  <div class="page hidden" id="page-skills">
+
+  <div class="module" id="module-skills-next">
+    <div class="section-label-row">
+      <div class="section-label">Train next</div>
+    </div>
+    <div id="skillsNextList"></div>
+  </div>
+
+  <div class="module" id="module-skills-lines">
+    <div class="section-label-row">
+      <div class="section-label">Skill progressions</div>
+    </div>
+    <div class="empty" style="padding:0 0 10px;">Build an ordered checklist per skill (e.g. Planche: frog stand → tuck → straddle → full). Give each step a target, like "hold 20s × 3 sets", and link it to an exercise: when your logged sets meet the target the app tells you to move up, and you confirm by marking the step done.</div>
+    <div id="skillLinesList"></div>
+    <div class="add-inline">
+      <input type="text" id="newSkillLineInput" placeholder="New skill line (e.g. Planche)" />
+      <button id="addSkillLineBtn">Add</button>
+    </div>
+  </div>
+
+  </div>
+  <div class="page hidden" id="page-config">
+
+  <div class="module" id="module-config-blocks">
+    <div class="section-label-row">
+      <div class="section-label">Blocks</div>
+      <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="blocksSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="blocksCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div id="blocksSectionBody">
+      <div class="empty" style="padding:0 0 8px;">Workout days (e.g. "Leg Day") that pull exercises from any category. Tap the checklist icon to choose exercises, the eye icon to show/hide it from the home page picker.</div>
+      <div id="blockEditList"></div>
+      <div class="add-inline">
+        <input type="text" id="newBlockInput" placeholder="New block name" />
+        <button id="addBlockBtn">Add</button>
+      </div>
+      <div class="hidden" id="blockAssignSection">
+        <div class="section-label" style="margin:10px 0 6px;">Assign exercises to "<span id="blockAssignName"></span>"</div>
+        <input type="text" id="blockAssignSearchInput" placeholder="Search exercises…" style="margin-bottom:8px;" />
+        <div id="blockAssignChecklist" class="existing-ex-checklist"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="module" id="module-config-categories">
+    <div class="section-label-row">
+      <div class="section-label">Categories</div>
+      <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="categoriesSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="categoriesCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div id="categoriesSectionBody">
+      <div class="empty" style="padding:0 0 8px;">Real exercise lists — Push, Pull, Legs, etc. Rename or delete here; tap the checklist icon to move exercises in from another category.</div>
+      <div id="catEditList"></div>
+      <div class="add-inline">
+        <input type="text" id="newCatInput" placeholder="New category name" />
+        <button id="addCatBtn">Add</button>
+      </div>
+      <div class="hidden" id="catAssignSection">
+        <div class="section-label" style="margin:10px 0 6px;">Move exercises into "<span id="catAssignName"></span>"</div>
+        <input type="text" id="catAssignSearchInput" placeholder="Search exercises…" style="margin-bottom:8px;" />
+        <div id="catAssignChecklist" class="existing-ex-checklist"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="module" id="module-config-equipment">
+    <div class="section-label-row">
+      <div class="section-label">Equipment</div>
+      <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="equipmentSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="equipmentCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div id="equipmentSectionBody">
+      <div class="empty" style="padding:0 0 8px;">Equipment tags you can attach to a logged exercise (bar, rings, parallettes...). Rename, recolor, reorder, or delete here.</div>
+      <div id="equipmentEditList"></div>
+      <div class="add-inline">
+        <input type="text" id="newEquipmentInput" placeholder="New equipment name" />
+        <button id="addEquipmentBtn">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="module" id="module-config-bodyweight">
+    <div class="section-label-row">
+      <div class="section-label">Bodyweight</div>
+      <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="bodyweightCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div id="bodyweightSectionBody">
+      <div class="empty" style="padding:0 0 8px;">Log your weight whenever you check it. The graph page uses it to show strength relative to bodyweight and to plot strength against bodyweight over time.</div>
+      <div class="bw-summary hidden" id="bodyweightSummary"></div>
+      <div class="add-inline">
+        <input type="date" id="bwDateInput" aria-label="Date" />
+        <input type="number" step="0.1" min="0" id="bwValueInput" placeholder="kg" aria-label="Bodyweight" />
+        <button id="addBodyweightBtn">Add</button>
+      </div>
+      <div id="bodyweightList" class="scroll-list hidden" style="max-height:240px; margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="module" id="module-config-exercises">
+    <div class="section-label-row">
+      <div class="section-label">Exercises<span id="exercisesCount"></span></div>
+      <div class="sort-group">
+        <button class="icon-btn" id="exSortToggleBtn" aria-label="Sort: A–Z (tap to change)" title="Sort: A–Z — tap to change"><i class="fa-solid fa-arrow-down-a-z" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="exListSearchBtn" aria-label="Search this list" title="Search this list"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+        <button class="icon-btn" id="addExerciseModalBtn" aria-label="Add exercise" title="Add exercise"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="hidden" id="allExSearchRow" style="margin-bottom:8px;">
+      <input type="text" id="allExSearchInput" placeholder="Search this list…" />
+    </div>
+    <div class="empty" style="padding:0 0 8px;">Every exercise across all categories.</div>
+    <div id="allExercisesList" class="scroll-list"></div>
+  </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="exSearchOverlay">
+  <div class="modal-box">
+    <div class="section-label" style="margin-bottom:10px;">Search exercises</div>
+    <input type="text" id="exerciseSearchInput" placeholder="Type to search all exercises…" />
+    <div id="exerciseSearchResults" class="scroll-list" style="margin-top:12px; max-height:320px;"></div>
+    <div class="modal-actions">
+      <button type="button" id="exSearchCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="exModalOverlay">
+  <div class="modal-box">
+    <div class="section-label" id="exModalTitle">Add exercise</div>
+    <div class="modal-field">
+      <label for="exModalName">Name</label>
+      <input type="text" id="exModalName" placeholder="Exercise name" />
+    </div>
+    <div class="modal-field">
+      <label for="exModalCategory">Category</label>
+      <select id="exModalCategory"></select>
+    </div>
+    <div class="modal-row">
+      <input type="color" id="exModalColor" />
+      <button type="button" class="iso-toggle" id="exModalIsoBtn">REPS</button>
+      <button type="button" class="iso-toggle" id="exModalUniBtn">BI</button>
+      <button type="button" class="iso-toggle" id="exModalLevBtn" title="Track an angle/leverage tag per set (e.g. planche/lever progressions, incline push-ups)">LEV OFF</button>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="danger hidden" id="exModalDeleteBtn">Delete</button>
+      <button type="button" id="exModalCancelBtn">Cancel</button>
+      <button type="button" id="exModalSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="skillStepModalOverlay">
+  <div class="modal-box">
+    <div class="section-label" id="skillStepModalTitle">Add step</div>
+    <div class="modal-field">
+      <label for="skillStepName">Step name</label>
+      <input type="text" id="skillStepName" placeholder="e.g. Tuck planche" />
+    </div>
+    <div class="modal-field">
+      <label for="skillStepExercise">Tracked by exercise</label>
+      <select id="skillStepExercise"></select>
+    </div>
+    <div class="modal-field">
+      <label for="skillStepMetric">Criterion</label>
+      <select id="skillStepMetric">
+        <option value="hold">Hold time (seconds)</option>
+        <option value="reps">Reps</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field" style="margin-top:0; flex:1;">
+        <label for="skillStepTarget" id="skillStepTargetLabel">Seconds per set</label>
+        <input type="number" min="1" id="skillStepTarget" />
+      </div>
+      <div class="modal-field" style="margin-top:0; flex:1;">
+        <label for="skillStepSets">Sets</label>
+        <input type="number" min="1" max="20" id="skillStepSets" />
+      </div>
+    </div>
+    <div class="empty" style="padding:10px 0 0; font-size:12px;">Met when at least this many sets in a single day reach the target (for holds, quick attempts count too; for one-sided moves the weaker side counts). Leave the exercise unlinked to tick the step off yourself.</div>
+    <div class="modal-actions">
+      <button type="button" id="skillStepCancelBtn">Cancel</button>
+      <button type="button" id="skillStepSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="workout-shared.js"></script>
+<script src="workout-log.js"></script>
+<script src="workout-tools.js" defer></script>
+<script src="workout-library.js" defer></script>
+<script src="workout-profile.js" defer></script>
+<script src="workout-backup.js" defer></script>
+<script src="workout-pwa.js" defer></script>
+</body>
+</html>
