@@ -4028,7 +4028,10 @@
     }
   });
   const graphLink = document.getElementById('graphLink');
+  // Hosted on a web address (https / localhost) both pages share the same saved data, so the graph simply opens
+  // in this window like any other link. Only a copy opened straight from disk needs the separate-window hand-off.
   graphLink.addEventListener('click', (e) => {
+    if (location.protocol !== 'file:') return;
     e.preventDefault();
     graphWindowRef = window.open(graphLink.href, 'workoutGraphWindow');
     setTimeout(() => sendDataToGraphWindow(graphWindowRef), 150);
@@ -4161,6 +4164,45 @@
     });
   }
 
+  // Leaving this page (for example to look at the graphs) and coming back reloads it, so the work in progress that isn't
+  // logged yet is parked in sessionStorage (this tab only, cleared when the tab or app is closed) and put back on return.
+  const SESSION_KEY = 'workout-log-session-v1';
+  function hasTypedValues() {
+    return Array.from(document.querySelectorAll('#setsGrid input, #attemptsGrid input[type="number"]')).some(i => i.value !== '') || notesInput.value.trim() !== '';
+  }
+  function saveSession() {
+    try {
+      if (selectedExercise && hasTypedValues()) snapshotDraft(selectedExercise);
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        at: Date.now(), date: dateInput.value, category: active, block: activeBlock, exercise: selectedExercise,
+        drafts: exerciseDrafts, superset: activeSuperset, members: Array.from(supersetMembers)
+      }));
+    } catch (e) { /* storage unavailable: nothing is lost that was saved before */ }
+  }
+  window.addEventListener('pagehide', saveSession);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSession(); });
+  function restoreSession() {
+    let s = null;
+    try { s = JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { return; }
+    if (!s || !(Date.now() - s.at < 12 * 3600 * 1000)) return;
+    try {
+      if (s.date && /^\d{4}-\d{2}-\d{2}$/.test(s.date)) { dateInput.value = s.date; updateHeaderDateDisplay(); }
+      if (s.category && categories.includes(s.category)) active = s.category;
+      activeBlock = (s.block && blocks.includes(s.block)) ? s.block : null;
+      exerciseDrafts = (s.drafts && typeof s.drafts === 'object') ? s.drafts : {};
+      if (s.superset && s.superset.id) { activeSuperset = s.superset; supersetMembers = new Set(s.members || []); }
+      renderBlockSelect();
+      updateExercisePicker();
+      if (s.exercise && sortedExerciseList().some(p => p.exObj.name === s.exercise)) {
+        selectedExercise = s.exercise;
+        updateExercisePicker();
+        restoreDraft(s.exercise);
+        renderModifiers();
+      }
+      updateSupersetUI();
+    } catch (e) { /* a stale or odd session is simply ignored */ }
+  }
+
   applyMode(themeMode);
   renderModeToggle();
   applyTheme(themeIndex);
@@ -4186,5 +4228,6 @@
   applyLayout();
   renderThemeSwatches();
   navigateTo(location.hash === '#history' ? 'history' : 'home');
+  restoreSession();
   render();
 })();
