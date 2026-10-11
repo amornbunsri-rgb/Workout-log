@@ -1,0 +1,9 @@
+# Personal workout data: never publish these
+backup/
+workout-backup-*.json
+*.backup.json
+
+# Computer clutter
+.DS_Store
+Thumbs.db
+*.zip

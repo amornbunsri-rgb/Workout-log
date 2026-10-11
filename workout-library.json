@@ -1,0 +1,3439 @@
+{
+ "version": 1,
+ "updated": "2026-09-30",
+ "meta": {
+  "levels": [
+   {
+    "id": "beginner",
+    "label": "Beginner"
+   },
+   {
+    "id": "intermediate",
+    "label": "Intermediate"
+   },
+   {
+    "id": "advanced",
+    "label": "Advanced"
+   },
+   {
+    "id": "expert",
+    "label": "Expert"
+   }
+  ],
+  "types": [
+   {
+    "id": "strength",
+    "label": "Strength"
+   },
+   {
+    "id": "skill",
+    "label": "Skill"
+   },
+   {
+    "id": "mobility",
+    "label": "Mobility"
+   },
+   {
+    "id": "circuit",
+    "label": "Superset / circuit"
+   }
+  ],
+  "maxWeeks": 6
+ },
+ "programmes": [
+  {
+   "id": "prog-foundation-strength",
+   "name": "Foundation Strength",
+   "level": "beginner",
+   "weeks": 4,
+   "daysPerWeek": 3,
+   "types": [
+    "strength"
+   ],
+   "summary": "Full-body basics: push, pull, legs and core three times a week. Builds the base for every later programme.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Push-ups",
+       "sets": 3,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Bodyweight squats",
+       "sets": 3,
+       "target": "12–15 reps"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 3,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Plank",
+       "sets": 3,
+       "target": "20–30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Incline push-ups",
+       "sets": 3,
+       "target": "8–12 reps"
+      },
+      {
+       "name": "Reverse lunges",
+       "sets": 3,
+       "target": "8 reps per leg"
+      },
+      {
+       "name": "Dead hang",
+       "sets": 3,
+       "target": "15–20 s"
+      },
+      {
+       "name": "Glute bridges",
+       "sets": 3,
+       "target": "12–15 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "10–20 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Push-ups",
+       "sets": 3,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Step-ups",
+       "sets": 3,
+       "target": "8 reps per leg"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 3,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Dead bug",
+       "sets": 3,
+       "target": "8 reps per side"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "Weeks 1–2: stay at the low end of each range. Week 3: add a rep per set. Week 4: when you reach the top of every range, move to a harder variation (lower incline, feet-elevated rows)."
+  },
+  {
+   "id": "prog-first-pullup",
+   "name": "First Pull-up",
+   "level": "beginner",
+   "weeks": 6,
+   "daysPerWeek": 3,
+   "types": [
+    "strength"
+   ],
+   "summary": "Six weeks of hangs, scapular work, negatives and rows aimed at getting your first strict pull-up.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Dead hang",
+       "sets": 3,
+       "target": "20–30 s"
+      },
+      {
+       "name": "Scapular pull-ups",
+       "sets": 3,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Negative pull-ups",
+       "sets": 4,
+       "target": "3–5 reps",
+       "note": "Lower for 3–5 s"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Feet-elevated inverted rows",
+       "sets": 4,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Flexed-arm hang (chin over bar)",
+       "sets": 3,
+       "target": "10–20 s"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "20 s"
+      },
+      {
+       "name": "Push-ups",
+       "sets": 3,
+       "target": "8–12 reps"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Dead hang",
+       "sets": 3,
+       "target": "25–40 s"
+      },
+      {
+       "name": "Band-assisted pull-ups",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Negative pull-ups",
+       "sets": 3,
+       "target": "4–5 reps",
+       "note": "Lower for 5 s"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Weeks 1–2: learn the movements. Weeks 3–4: lengthen the negatives to 5 s and thin the band. Weeks 5–6: test a strict pull-up at the start of Day A each week."
+  },
+  {
+   "id": "prog-handstand-foundations",
+   "name": "Handstand Foundations",
+   "level": "beginner",
+   "weeks": 4,
+   "daysPerWeek": 4,
+   "types": [
+    "skill"
+   ],
+   "summary": "Short, frequent sessions to build wrist strength, shoulder stacking and a solid wall handstand.",
+   "days": [
+    {
+     "name": "Day A and C (wall skill)",
+     "exercises": [
+      {
+       "name": "Wrist warm-up",
+       "sets": 1,
+       "target": "2 min"
+      },
+      {
+       "name": "Chest-to-wall plank hold",
+       "sets": 4,
+       "target": "20–30 s"
+      },
+      {
+       "name": "Plank shoulder taps",
+       "sets": 3,
+       "target": "10 per side"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "20 s"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B and D (handstand)",
+     "exercises": [
+      {
+       "name": "Chest-to-wall handstand",
+       "sets": 5,
+       "target": "15–30 s",
+       "note": "Rest 60–90 s"
+      },
+      {
+       "name": "Pike push-ups",
+       "sets": 3,
+       "target": "5–8 reps"
+      },
+      {
+       "name": "Hollow-to-arch rocks",
+       "sets": 3,
+       "target": "10 reps"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Week 1: hold the wall handstand for 15 s. Add 5 s each week as long as your ribs stay tucked and arms stay straight. Stop a set when form breaks."
+  },
+  {
+   "id": "prog-mobility-reset",
+   "name": "2-Week Mobility Reset",
+   "level": "beginner",
+   "weeks": 2,
+   "daysPerWeek": 5,
+   "types": [
+    "mobility"
+   ],
+   "summary": "Fifteen easy minutes a day to open shoulders, wrists, hips and hamstrings.",
+   "days": [
+    {
+     "name": "Upper body flow",
+     "exercises": [
+      {
+       "name": "Thoracic rotations",
+       "sets": 2,
+       "target": "8 per side"
+      },
+      {
+       "name": "Shoulder circles (CARs)",
+       "sets": 2,
+       "target": "5 per direction"
+      },
+      {
+       "name": "Wall slides",
+       "sets": 2,
+       "target": "10 reps"
+      },
+      {
+       "name": "Wrist rocks",
+       "sets": 2,
+       "target": "30 s"
+      }
+     ],
+     "warmup": null,
+     "stretch": null
+    },
+    {
+     "name": "Lower body flow",
+     "exercises": [
+      {
+       "name": "Deep squat hold",
+       "sets": 3,
+       "target": "30–60 s"
+      },
+      {
+       "name": "90/90 hip switches",
+       "sets": 2,
+       "target": "8 reps per side"
+      },
+      {
+       "name": "Couch stretch",
+       "sets": 2,
+       "target": "45 s per side"
+      },
+      {
+       "name": "Wall hamstring stretch",
+       "sets": 2,
+       "target": "45 s per side"
+      }
+     ],
+     "warmup": null,
+     "stretch": null
+    }
+   ],
+   "progression": "Alternate upper and lower flows across the five days. Keep every stretch comfortable; move gently in and out and never bounce."
+  },
+  {
+   "id": "prog-circuit-kickstart",
+   "name": "Circuit Kickstart",
+   "level": "beginner",
+   "weeks": 3,
+   "daysPerWeek": 3,
+   "types": [
+    "circuit",
+    "strength"
+   ],
+   "summary": "Three weeks of simple circuits to build work capacity and get into a routine.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Bodyweight squats",
+       "sets": 4,
+       "target": "12 reps",
+       "note": "Circuit: 4 rounds, 60–90 s rest between rounds"
+      },
+      {
+       "name": "Push-ups",
+       "sets": 4,
+       "target": "8 reps"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 4,
+       "target": "8 reps"
+      },
+      {
+       "name": "Mountain climbers",
+       "sets": 4,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Reverse lunges",
+       "sets": 4,
+       "target": "8 per leg",
+       "note": "Circuit: 4 rounds"
+      },
+      {
+       "name": "Incline push-ups",
+       "sets": 4,
+       "target": "10 reps"
+      },
+      {
+       "name": "Dead hang",
+       "sets": 4,
+       "target": "20 s"
+      },
+      {
+       "name": "Plank",
+       "sets": 4,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Jump squats",
+       "sets": 3,
+       "target": "10 reps",
+       "note": "Circuit: 3–4 rounds"
+      },
+      {
+       "name": "Push-ups",
+       "sets": 3,
+       "target": "10 reps"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 3,
+       "target": "10 reps"
+      },
+      {
+       "name": "Burpees",
+       "sets": 3,
+       "target": "6 reps"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "Week 1: 3 rounds per circuit. Week 2: 4 rounds. Week 3: keep 4 rounds and shorten rest by 15 s."
+  },
+  {
+   "id": "prog-ppl-hypertrophy",
+   "name": "Push / Pull / Legs Hypertrophy",
+   "level": "intermediate",
+   "weeks": 6,
+   "daysPerWeek": 3,
+   "types": [
+    "strength"
+   ],
+   "summary": "A classic push, pull and legs split using bodyweight variations to build muscle.",
+   "days": [
+    {
+     "name": "Push",
+     "exercises": [
+      {
+       "name": "Dips",
+       "sets": 4,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Pike push-ups",
+       "sets": 4,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Diamond push-ups",
+       "sets": 3,
+       "target": "8–12 reps"
+      },
+      {
+       "name": "Hanging knee raises",
+       "sets": 3,
+       "target": "10–15 reps"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Pull",
+     "exercises": [
+      {
+       "name": "Pull-ups",
+       "sets": 4,
+       "target": "5–8 reps"
+      },
+      {
+       "name": "Feet-elevated inverted rows",
+       "sets": 3,
+       "target": "8–12 reps"
+      },
+      {
+       "name": "Chin-ups",
+       "sets": 3,
+       "target": "5–8 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Legs",
+     "exercises": [
+      {
+       "name": "Bulgarian split squats",
+       "sets": 4,
+       "target": "8–10 per leg"
+      },
+      {
+       "name": "Assisted Nordic curls",
+       "sets": 3,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Single-leg calf raises",
+       "sets": 3,
+       "target": "12–15 reps"
+      },
+      {
+       "name": "Glute bridges (single leg)",
+       "sets": 3,
+       "target": "10–12 per leg"
+      }
+     ],
+     "warmup": "wu-legs",
+     "stretch": "st-lower"
+    }
+   ],
+   "progression": "Add a rep to each set every week. In week 4 reduce sets by one (easy week). In week 6 use slower lowering (3 s) or a harder variation once you reach the top of each range."
+  },
+  {
+   "id": "prog-front-lever",
+   "name": "Front Lever Path",
+   "level": "intermediate",
+   "weeks": 6,
+   "daysPerWeek": 3,
+   "types": [
+    "skill",
+    "strength"
+   ],
+   "summary": "Progress from tuck to advanced tuck front lever with supporting pulling and core work.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Tuck front lever",
+       "sets": 5,
+       "target": "8–15 s"
+      },
+      {
+       "name": "Ice cream makers",
+       "sets": 3,
+       "target": "4 reps"
+      },
+      {
+       "name": "Pull-ups",
+       "sets": 4,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Advanced tuck front lever",
+       "sets": 5,
+       "target": "5–10 s"
+      },
+      {
+       "name": "Tuck front lever rows",
+       "sets": 3,
+       "target": "5–8 reps"
+      },
+      {
+       "name": "Scapular retraction hangs",
+       "sets": 3,
+       "target": "10 reps"
+      },
+      {
+       "name": "Hanging leg raises",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Tuck front lever",
+       "sets": 4,
+       "target": "10–15 s"
+      },
+      {
+       "name": "Inverted rows (feet elevated)",
+       "sets": 3,
+       "target": "8–10 reps"
+      },
+      {
+       "name": "Hanging knee raises",
+       "sets": 3,
+       "target": "10–12 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Move to the advanced tuck when you hold a tuck for 5 sets of 15 s with flat back and straight arms. Keep the best hold quality, not the longest time."
+  },
+  {
+   "id": "prog-muscle-up-prep",
+   "name": "Muscle-up Prep",
+   "level": "intermediate",
+   "weeks": 5,
+   "daysPerWeek": 3,
+   "types": [
+    "strength",
+    "skill"
+   ],
+   "summary": "Build the pulling height, explosive power and transition needed for a bar muscle-up.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Chest-to-bar pull-ups",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Explosive pull-ups",
+       "sets": 4,
+       "target": "3–5 reps"
+      },
+      {
+       "name": "Straight bar dips",
+       "sets": 3,
+       "target": "6–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Low-bar muscle-up negatives",
+       "sets": 4,
+       "target": "3 reps",
+       "note": "Slow lowering through the transition"
+      },
+      {
+       "name": "False grip hangs",
+       "sets": 3,
+       "target": "10–20 s"
+      },
+      {
+       "name": "Hanging knee raises",
+       "sets": 3,
+       "target": "10–12 reps"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Explosive pull-ups",
+       "sets": 5,
+       "target": "3 reps"
+      },
+      {
+       "name": "Bar dips",
+       "sets": 3,
+       "target": "8–10 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "Weeks 1–2: pull-up height and strength. Weeks 3–4: add the transition drills. Week 5: test a low-bar muscle-up attempt on Day B."
+  },
+  {
+   "id": "prog-superset-blocks",
+   "name": "Superset Strength Blocks",
+   "level": "intermediate",
+   "weeks": 4,
+   "daysPerWeek": 3,
+   "types": [
+    "circuit",
+    "strength"
+   ],
+   "summary": "Pair opposing movements back to back to fit more work into each session.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "A1 Pull-ups",
+       "sets": 4,
+       "target": "6–8 reps",
+       "note": "Superset A1/A2, rest 90 s after each pair"
+      },
+      {
+       "name": "A2 Dips",
+       "sets": 4,
+       "target": "8–10 reps"
+      },
+      {
+       "name": "B1 Bulgarian split squats",
+       "sets": 3,
+       "target": "8 per leg",
+       "note": "Superset B1/B2"
+      },
+      {
+       "name": "B2 Hanging knee raises",
+       "sets": 3,
+       "target": "10–12 reps"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "A1 Inverted rows",
+       "sets": 4,
+       "target": "8–10 reps",
+       "note": "Superset A1/A2"
+      },
+      {
+       "name": "A2 Push-ups",
+       "sets": 4,
+       "target": "10–15 reps"
+      },
+      {
+       "name": "B1 Pistol squat progression",
+       "sets": 3,
+       "target": "5 per leg",
+       "note": "Superset B1/B2"
+      },
+      {
+       "name": "B2 Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "A1 Chin-ups",
+       "sets": 4,
+       "target": "6–8 reps",
+       "note": "Superset A1/A2"
+      },
+      {
+       "name": "A2 Pike push-ups",
+       "sets": 4,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "B1 Walking lunges",
+       "sets": 3,
+       "target": "10 per leg",
+       "note": "Superset B1/B2"
+      },
+      {
+       "name": "B2 Plank",
+       "sets": 3,
+       "target": "40 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "Week 1: use the low end of each range. Add a rep per set each week. Keep rest strict at 90 s after each pair."
+  },
+  {
+   "id": "prog-mobility-skills",
+   "name": "Mobility for Skills",
+   "level": "intermediate",
+   "weeks": 3,
+   "daysPerWeek": 4,
+   "types": [
+    "mobility"
+   ],
+   "summary": "Shoulder, wrist and hip mobility work that supports handstands, levers and planche.",
+   "days": [
+    {
+     "name": "Shoulders and wrists",
+     "exercises": [
+      {
+       "name": "Wrist conditioning",
+       "sets": 2,
+       "target": "1 min"
+      },
+      {
+       "name": "Wall angels",
+       "sets": 3,
+       "target": "10 reps"
+      },
+      {
+       "name": "Shoulder flexion stretch (wall)",
+       "sets": 2,
+       "target": "45 s"
+      },
+      {
+       "name": "Thoracic extension over a roller",
+       "sets": 2,
+       "target": "45 s"
+      }
+     ],
+     "warmup": null,
+     "stretch": null
+    },
+    {
+     "name": "Hips and legs",
+     "exercises": [
+      {
+       "name": "Straddle stretch",
+       "sets": 3,
+       "target": "45 s"
+      },
+      {
+       "name": "Pancake lean",
+       "sets": 2,
+       "target": "45 s"
+      },
+      {
+       "name": "Couch stretch",
+       "sets": 2,
+       "target": "45 s per side"
+      },
+      {
+       "name": "Deep squat hold",
+       "sets": 2,
+       "target": "45 s"
+      }
+     ],
+     "warmup": null,
+     "stretch": null
+    }
+   ],
+   "progression": "Do each session after a short warm-up. Week 2: add 10 s to each hold. Week 3: add a third round of the wrists and shoulders."
+  },
+  {
+   "id": "prog-planche-progression",
+   "name": "Planche Progression",
+   "level": "advanced",
+   "weeks": 6,
+   "daysPerWeek": 3,
+   "types": [
+    "skill",
+    "strength"
+   ],
+   "summary": "Structured tuck to advanced tuck planche development with straight-arm conditioning.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Tuck planche",
+       "sets": 5,
+       "target": "8–12 s"
+      },
+      {
+       "name": "Planche leans",
+       "sets": 4,
+       "target": "15–20 s"
+      },
+      {
+       "name": "Pseudo planche push-ups",
+       "sets": 4,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Advanced tuck planche",
+       "sets": 5,
+       "target": "5–8 s"
+      },
+      {
+       "name": "Elevated pike push-ups",
+       "sets": 4,
+       "target": "5–8 reps"
+      },
+      {
+       "name": "Parallette support hold",
+       "sets": 3,
+       "target": "20–30 s"
+      },
+      {
+       "name": "Wrist conditioning",
+       "sets": 2,
+       "target": "1 min"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Tuck planche",
+       "sets": 4,
+       "target": "10–12 s"
+      },
+      {
+       "name": "Planche leans",
+       "sets": 3,
+       "target": "20 s"
+      },
+      {
+       "name": "Bar dips",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Straight-arm work stresses wrists and elbows. Add time gradually and keep at least one rest day between sessions. Move up a progression once you hold 5 sets of 10 s cleanly."
+  },
+  {
+   "id": "prog-hspu-path",
+   "name": "Handstand Push-up Path",
+   "level": "advanced",
+   "weeks": 5,
+   "daysPerWeek": 3,
+   "types": [
+    "skill",
+    "strength"
+   ],
+   "summary": "Wall handstand push-up negatives, presses and supporting pushing volume.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Wall handstand hold",
+       "sets": 4,
+       "target": "30 s"
+      },
+      {
+       "name": "Wall HSPU negatives",
+       "sets": 4,
+       "target": "3–5 reps",
+       "note": "Lower for 3–5 s"
+      },
+      {
+       "name": "Elevated pike push-ups",
+       "sets": 3,
+       "target": "6–8 reps"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "Partial-range wall HSPU",
+       "sets": 4,
+       "target": "3–5 reps"
+      },
+      {
+       "name": "Dips",
+       "sets": 4,
+       "target": "6–10 reps"
+      },
+      {
+       "name": "Hollow hold",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Wall HSPU (full range)",
+       "sets": 5,
+       "target": "2–4 reps"
+      },
+      {
+       "name": "Pseudo planche push-ups",
+       "sets": 3,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Handstand shrugs",
+       "sets": 3,
+       "target": "10 reps"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Weeks 1–2: negatives and partial range. Weeks 3–4: reduce the assistance. Week 5: test full-range repetitions on Day C."
+  },
+  {
+   "id": "prog-weighted-strength",
+   "name": "Weighted Calisthenics Strength",
+   "level": "advanced",
+   "weeks": 6,
+   "daysPerWeek": 4,
+   "types": [
+    "strength"
+   ],
+   "summary": "Low-rep weighted pulling, pushing and single-leg work for maximum strength.",
+   "days": [
+    {
+     "name": "Day A (pull)",
+     "exercises": [
+      {
+       "name": "Weighted pull-ups",
+       "sets": 5,
+       "target": "3–5 reps"
+      },
+      {
+       "name": "Feet-elevated rows (weighted)",
+       "sets": 3,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Hanging leg raises",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B (push)",
+     "exercises": [
+      {
+       "name": "Weighted dips",
+       "sets": 5,
+       "target": "3–5 reps"
+      },
+      {
+       "name": "Pike push-ups (elevated)",
+       "sets": 3,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "Plank (weighted)",
+       "sets": 3,
+       "target": "30 s"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C (legs)",
+     "exercises": [
+      {
+       "name": "Weighted Bulgarian split squats",
+       "sets": 4,
+       "target": "5–6 per leg"
+      },
+      {
+       "name": "Pistol squats",
+       "sets": 3,
+       "target": "3–5 per leg"
+      },
+      {
+       "name": "Assisted Nordic curls",
+       "sets": 3,
+       "target": "4–6 reps"
+      }
+     ],
+     "warmup": "wu-legs",
+     "stretch": "st-lower"
+    },
+    {
+     "name": "Day D (mixed)",
+     "exercises": [
+      {
+       "name": "Weighted chin-ups",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Weighted push-ups",
+       "sets": 4,
+       "target": "6–8 reps"
+      },
+      {
+       "name": "L-sit",
+       "sets": 4,
+       "target": "15–20 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "When you hit the top of the rep range on every set, add 1–2.5 kg next session. Rest 2–3 min between heavy sets. Deload in week 4 by halving the sets."
+  },
+  {
+   "id": "prog-one-arm-pullup",
+   "name": "One-Arm Pull-up Prep",
+   "level": "expert",
+   "weeks": 6,
+   "daysPerWeek": 3,
+   "types": [
+    "strength",
+    "skill"
+   ],
+   "summary": "Advanced pulling strength and one-arm specific work. Needs a strong weighted pull-up base.",
+   "days": [
+    {
+     "name": "Day A",
+     "exercises": [
+      {
+       "name": "Weighted pull-ups",
+       "sets": 5,
+       "target": "3–5 reps"
+      },
+      {
+       "name": "Archer pull-ups",
+       "sets": 4,
+       "target": "4–6 reps per side"
+      },
+      {
+       "name": "One-arm dead hang",
+       "sets": 3,
+       "target": "10–20 s per arm"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B",
+     "exercises": [
+      {
+       "name": "One-arm pull-up negatives",
+       "sets": 4,
+       "target": "2–3 reps per arm",
+       "note": "Lower for 5 s"
+      },
+      {
+       "name": "Band-assisted one-arm pull-ups",
+       "sets": 3,
+       "target": "3 per arm"
+      },
+      {
+       "name": "Hanging leg raises",
+       "sets": 3,
+       "target": "8–10 reps"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C",
+     "exercises": [
+      {
+       "name": "Weighted chin-ups",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Typewriter pull-ups",
+       "sets": 3,
+       "target": "4 per side"
+      },
+      {
+       "name": "One-arm dead hang",
+       "sets": 3,
+       "target": "10–20 s per arm"
+      }
+     ],
+     "warmup": "wu-pull",
+     "stretch": "st-upper"
+    }
+   ],
+   "progression": "Elbow and shoulder tendons adapt slowly. Start with fewer sets in weeks 1–2, and stop any session where elbow pain appears."
+  },
+  {
+   "id": "prog-skills-peak",
+   "name": "Skills and Strength Peak",
+   "level": "expert",
+   "weeks": 6,
+   "daysPerWeek": 4,
+   "types": [
+    "skill",
+    "strength"
+   ],
+   "summary": "High-level lever, planche and handstand work alongside weighted strength.",
+   "days": [
+    {
+     "name": "Day A (lever)",
+     "exercises": [
+      {
+       "name": "Advanced tuck to straddle front lever",
+       "sets": 6,
+       "target": "5–8 s"
+      },
+      {
+       "name": "Weighted pull-ups",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Dragon flag negatives",
+       "sets": 3,
+       "target": "4–6 reps"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day B (planche)",
+     "exercises": [
+      {
+       "name": "Straddle planche progression",
+       "sets": 6,
+       "target": "4–6 s"
+      },
+      {
+       "name": "Weighted dips",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Planche push-ups (progression)",
+       "sets": 3,
+       "target": "4–6 reps"
+      }
+     ],
+     "warmup": "wu-push",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day C (handstand)",
+     "exercises": [
+      {
+       "name": "Freestanding handstand practice",
+       "sets": 1,
+       "target": "10 min"
+      },
+      {
+       "name": "Wall HSPU",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "Handstand press attempts",
+       "sets": 4,
+       "target": "2–3 reps"
+      }
+     ],
+     "warmup": "wu-skill",
+     "stretch": "st-upper"
+    },
+    {
+     "name": "Day D (legs and core)",
+     "exercises": [
+      {
+       "name": "Weighted pistol squats",
+       "sets": 4,
+       "target": "5 per leg"
+      },
+      {
+       "name": "Dragon flag",
+       "sets": 4,
+       "target": "4–6 reps"
+      },
+      {
+       "name": "L-sit",
+       "sets": 4,
+       "target": "15–20 s"
+      }
+     ],
+     "warmup": "wu-legs",
+     "stretch": "st-lower"
+    }
+   ],
+   "progression": "Stagger skills across the week and keep 24–48 h between straight-arm sessions. Trade volume for quality; stop sets when holds begin to degrade."
+  },
+  {
+   "id": "prog-deload-week",
+   "name": "1-Week Deload",
+   "level": "intermediate",
+   "weeks": 1,
+   "daysPerWeek": 3,
+   "types": [
+    "mobility",
+    "strength"
+   ],
+   "summary": "An easy week: half the usual volume plus mobility, to recover between harder blocks.",
+   "days": [
+    {
+     "name": "Day 1",
+     "exercises": [
+      {
+       "name": "Push-ups",
+       "sets": 2,
+       "target": "8–10 reps"
+      },
+      {
+       "name": "Inverted rows",
+       "sets": 2,
+       "target": "8–10 reps"
+      },
+      {
+       "name": "Bodyweight squats",
+       "sets": 2,
+       "target": "10–12 reps"
+      },
+      {
+       "name": "Shoulder circles (CARs)",
+       "sets": 2,
+       "target": "5 per direction"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day 2",
+     "exercises": [
+      {
+       "name": "Deep squat hold",
+       "sets": 3,
+       "target": "30–45 s"
+      },
+      {
+       "name": "Couch stretch",
+       "sets": 2,
+       "target": "45 s per side"
+      },
+      {
+       "name": "Thoracic rotations",
+       "sets": 2,
+       "target": "8 per side"
+      },
+      {
+       "name": "Wall slides",
+       "sets": 2,
+       "target": "10 reps"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    },
+    {
+     "name": "Day 3",
+     "exercises": [
+      {
+       "name": "Pull-ups (easy)",
+       "sets": 2,
+       "target": "4–5 reps"
+      },
+      {
+       "name": "Dips (easy)",
+       "sets": 2,
+       "target": "5–6 reps"
+      },
+      {
+       "name": "Plank",
+       "sets": 2,
+       "target": "30 s"
+      },
+      {
+       "name": "Dead hang",
+       "sets": 2,
+       "target": "20–30 s"
+      }
+     ],
+     "warmup": "wu-general",
+     "stretch": "st-full"
+    }
+   ],
+   "progression": "Stop every set well before failure. Sleep and eat well, then restart your regular programme the following week."
+  }
+ ],
+ "workouts": [
+  {
+   "id": "wk-full-body-basics",
+   "name": "Full-Body Basics",
+   "level": "beginner",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 35,
+   "summary": "A balanced starter session covering every major movement pattern.",
+   "exercises": [
+    {
+     "name": "Push-ups",
+     "sets": 3,
+     "target": "6–10 reps"
+    },
+    {
+     "name": "Bodyweight squats",
+     "sets": 3,
+     "target": "12–15 reps"
+    },
+    {
+     "name": "Inverted rows",
+     "sets": 3,
+     "target": "6–10 reps"
+    },
+    {
+     "name": "Glute bridges",
+     "sets": 3,
+     "target": "12–15 reps"
+    },
+    {
+     "name": "Plank",
+     "sets": 3,
+     "target": "20–30 s"
+    }
+   ],
+   "rest": "Rest 60–90 s between sets",
+   "warmup": "wu-general",
+   "stretch": "st-full"
+  },
+  {
+   "id": "wk-morning-mobility",
+   "name": "10-Minute Morning Mobility",
+   "level": "beginner",
+   "types": [
+    "mobility"
+   ],
+   "format": "straight",
+   "durationMin": 10,
+   "summary": "A quick wake-up flow for shoulders, spine and hips.",
+   "exercises": [
+    {
+     "name": "Cat-cow",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Thoracic rotations",
+     "sets": 1,
+     "target": "8 per side"
+    },
+    {
+     "name": "Shoulder circles (CARs)",
+     "sets": 1,
+     "target": "5 per direction"
+    },
+    {
+     "name": "Deep squat hold",
+     "sets": 2,
+     "target": "30 s"
+    },
+    {
+     "name": "90/90 hip switches",
+     "sets": 1,
+     "target": "8 per side"
+    }
+   ],
+   "warmup": null,
+   "stretch": null
+  },
+  {
+   "id": "wk-beginner-circuit",
+   "name": "Beginner Circuit",
+   "level": "beginner",
+   "types": [
+    "circuit"
+   ],
+   "format": "circuit",
+   "durationMin": 20,
+   "summary": "Four exercises, four rounds, steady pace.",
+   "exercises": [
+    {
+     "name": "Bodyweight squats",
+     "sets": 4,
+     "target": "12 reps"
+    },
+    {
+     "name": "Push-ups",
+     "sets": 4,
+     "target": "8 reps"
+    },
+    {
+     "name": "Inverted rows",
+     "sets": 4,
+     "target": "8 reps"
+    },
+    {
+     "name": "Mountain climbers",
+     "sets": 4,
+     "target": "30 s"
+    }
+   ],
+   "rest": "Rest 60–90 s between rounds",
+   "warmup": "wu-general",
+   "stretch": "st-full"
+  },
+  {
+   "id": "wk-core-starter",
+   "name": "Core Starter",
+   "level": "beginner",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 15,
+   "summary": "Basic trunk strength with low-risk positions.",
+   "exercises": [
+    {
+     "name": "Dead bug",
+     "sets": 3,
+     "target": "8 per side"
+    },
+    {
+     "name": "Plank",
+     "sets": 3,
+     "target": "20–30 s"
+    },
+    {
+     "name": "Hollow hold",
+     "sets": 3,
+     "target": "10–20 s"
+    },
+    {
+     "name": "Bird dog",
+     "sets": 3,
+     "target": "8 per side"
+    }
+   ],
+   "rest": "Rest 45–60 s",
+   "warmup": "wu-legs",
+   "stretch": "st-lower"
+  },
+  {
+   "id": "wk-handstand-wall",
+   "name": "Wall Handstand Practice",
+   "level": "beginner",
+   "types": [
+    "skill"
+   ],
+   "format": "straight",
+   "durationMin": 20,
+   "summary": "Practice stacking against the wall with short, high-quality holds.",
+   "exercises": [
+    {
+     "name": "Wrist warm-up",
+     "sets": 1,
+     "target": "2 min"
+    },
+    {
+     "name": "Chest-to-wall plank hold",
+     "sets": 3,
+     "target": "20–30 s"
+    },
+    {
+     "name": "Chest-to-wall handstand",
+     "sets": 5,
+     "target": "15–30 s"
+    },
+    {
+     "name": "Hollow hold",
+     "sets": 3,
+     "target": "20 s"
+    }
+   ],
+   "rest": "Rest 60–90 s",
+   "warmup": "wu-skill",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-push-day",
+   "name": "Push Day",
+   "level": "intermediate",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 40,
+   "summary": "Dips, pike push-ups and triceps work.",
+   "exercises": [
+    {
+     "name": "Dips",
+     "sets": 4,
+     "target": "6–10 reps"
+    },
+    {
+     "name": "Pike push-ups",
+     "sets": 4,
+     "target": "6–10 reps"
+    },
+    {
+     "name": "Diamond push-ups",
+     "sets": 3,
+     "target": "8–12 reps"
+    },
+    {
+     "name": "Plank shoulder taps",
+     "sets": 3,
+     "target": "10 per side"
+    }
+   ],
+   "rest": "Rest 90 s",
+   "warmup": "wu-push",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-pull-day",
+   "name": "Pull Day",
+   "level": "intermediate",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 40,
+   "summary": "Vertical and horizontal pulling with core.",
+   "exercises": [
+    {
+     "name": "Pull-ups",
+     "sets": 4,
+     "target": "5–8 reps"
+    },
+    {
+     "name": "Feet-elevated inverted rows",
+     "sets": 3,
+     "target": "8–12 reps"
+    },
+    {
+     "name": "Chin-ups",
+     "sets": 3,
+     "target": "5–8 reps"
+    },
+    {
+     "name": "Hanging knee raises",
+     "sets": 3,
+     "target": "10–15 reps"
+    }
+   ],
+   "rest": "Rest 90 s",
+   "warmup": "wu-pull",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-legs-core",
+   "name": "Legs and Core",
+   "level": "intermediate",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 40,
+   "summary": "Single-leg strength and trunk stability.",
+   "exercises": [
+    {
+     "name": "Bulgarian split squats",
+     "sets": 4,
+     "target": "8–10 per leg"
+    },
+    {
+     "name": "Assisted Nordic curls",
+     "sets": 3,
+     "target": "4–6 reps"
+    },
+    {
+     "name": "Single-leg calf raises",
+     "sets": 3,
+     "target": "12–15 reps"
+    },
+    {
+     "name": "Hollow hold",
+     "sets": 3,
+     "target": "30 s"
+    }
+   ],
+   "rest": "Rest 90 s",
+   "warmup": "wu-legs",
+   "stretch": "st-lower"
+  },
+  {
+   "id": "wk-push-pull-superset",
+   "name": "Push / Pull Superset",
+   "level": "intermediate",
+   "types": [
+    "circuit",
+    "strength"
+   ],
+   "format": "superset",
+   "durationMin": 35,
+   "summary": "Pair each pull with a push to keep the session efficient.",
+   "exercises": [
+    {
+     "name": "A1 Pull-ups",
+     "sets": 4,
+     "target": "6–8 reps",
+     "note": "Superset A1/A2"
+    },
+    {
+     "name": "A2 Dips",
+     "sets": 4,
+     "target": "8–10 reps"
+    },
+    {
+     "name": "B1 Inverted rows",
+     "sets": 3,
+     "target": "8–10 reps",
+     "note": "Superset B1/B2"
+    },
+    {
+     "name": "B2 Push-ups",
+     "sets": 3,
+     "target": "10–15 reps"
+    }
+   ],
+   "rest": "Rest 90 s after each pair",
+   "warmup": "wu-general",
+   "stretch": "st-full"
+  },
+  {
+   "id": "wk-static-hold-circuit",
+   "name": "Static Hold Circuit",
+   "level": "intermediate",
+   "types": [
+    "circuit",
+    "skill"
+   ],
+   "format": "circuit",
+   "durationMin": 25,
+   "summary": "Rotate through skill holds with short rests.",
+   "exercises": [
+    {
+     "name": "Tuck front lever",
+     "sets": 4,
+     "target": "8–12 s"
+    },
+    {
+     "name": "Tuck planche",
+     "sets": 4,
+     "target": "8–12 s"
+    },
+    {
+     "name": "L-sit",
+     "sets": 4,
+     "target": "15 s"
+    },
+    {
+     "name": "Wall handstand",
+     "sets": 4,
+     "target": "30 s"
+    }
+   ],
+   "rest": "Rest 45 s between holds, 90 s between rounds",
+   "warmup": "wu-skill",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-shoulder-wrist-prep",
+   "name": "Shoulder and Wrist Prep",
+   "level": "intermediate",
+   "types": [
+    "mobility"
+   ],
+   "format": "straight",
+   "durationMin": 15,
+   "summary": "Prepare the joints before pushing or straight-arm skill work.",
+   "exercises": [
+    {
+     "name": "Wrist rocks",
+     "sets": 2,
+     "target": "30 s"
+    },
+    {
+     "name": "Wall slides",
+     "sets": 2,
+     "target": "10 reps"
+    },
+    {
+     "name": "Shoulder circles (CARs)",
+     "sets": 2,
+     "target": "5 per direction"
+    },
+    {
+     "name": "Scapular push-ups",
+     "sets": 2,
+     "target": "10 reps"
+    }
+   ],
+   "warmup": null,
+   "stretch": null
+  },
+  {
+   "id": "wk-weighted-superset",
+   "name": "Weighted Pull / Push Superset",
+   "level": "advanced",
+   "types": [
+    "circuit",
+    "strength"
+   ],
+   "format": "superset",
+   "durationMin": 45,
+   "summary": "Heavy pairs for strength.",
+   "exercises": [
+    {
+     "name": "A1 Weighted pull-ups",
+     "sets": 5,
+     "target": "3–5 reps",
+     "note": "Superset A1/A2"
+    },
+    {
+     "name": "A2 Weighted dips",
+     "sets": 5,
+     "target": "3–5 reps"
+    },
+    {
+     "name": "B1 Pistol squats",
+     "sets": 3,
+     "target": "3–5 per leg",
+     "note": "Superset B1/B2"
+    },
+    {
+     "name": "B2 Hanging leg raises",
+     "sets": 3,
+     "target": "8–10 reps"
+    }
+   ],
+   "rest": "Rest 2 min after each pair",
+   "warmup": "wu-general",
+   "stretch": "st-full"
+  },
+  {
+   "id": "wk-planche-session",
+   "name": "Planche Skill Session",
+   "level": "advanced",
+   "types": [
+    "skill"
+   ],
+   "format": "straight",
+   "durationMin": 35,
+   "summary": "Planche progression practice with warm-up and finishing work.",
+   "exercises": [
+    {
+     "name": "Wrist conditioning",
+     "sets": 2,
+     "target": "1 min"
+    },
+    {
+     "name": "Planche leans",
+     "sets": 4,
+     "target": "15–20 s"
+    },
+    {
+     "name": "Tuck planche",
+     "sets": 5,
+     "target": "8–12 s"
+    },
+    {
+     "name": "Pseudo planche push-ups",
+     "sets": 3,
+     "target": "6–8 reps"
+    }
+   ],
+   "rest": "Rest 2 min between holds",
+   "warmup": "wu-skill",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-front-lever-session",
+   "name": "Front Lever Session",
+   "level": "advanced",
+   "types": [
+    "skill"
+   ],
+   "format": "straight",
+   "durationMin": 35,
+   "summary": "Front lever holds, rows and scapular control.",
+   "exercises": [
+    {
+     "name": "Scapular retraction hangs",
+     "sets": 3,
+     "target": "10 reps"
+    },
+    {
+     "name": "Advanced tuck front lever",
+     "sets": 5,
+     "target": "6–10 s"
+    },
+    {
+     "name": "Tuck front lever rows",
+     "sets": 3,
+     "target": "5–8 reps"
+    },
+    {
+     "name": "Hanging leg raises",
+     "sets": 3,
+     "target": "8–10 reps"
+    }
+   ],
+   "rest": "Rest 2 min between holds",
+   "warmup": "wu-pull",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-hips-hamstrings",
+   "name": "Hips and Hamstrings Mobility",
+   "level": "advanced",
+   "types": [
+    "mobility"
+   ],
+   "format": "straight",
+   "durationMin": 20,
+   "summary": "Longer holds to improve straddle, pancake and pike positions.",
+   "exercises": [
+    {
+     "name": "Couch stretch",
+     "sets": 2,
+     "target": "60 s per side"
+    },
+    {
+     "name": "Straddle stretch",
+     "sets": 3,
+     "target": "60 s"
+    },
+    {
+     "name": "Pancake lean",
+     "sets": 3,
+     "target": "45 s"
+    },
+    {
+     "name": "Hamstring wall stretch",
+     "sets": 2,
+     "target": "60 s per side"
+    }
+   ],
+   "warmup": null,
+   "stretch": null
+  },
+  {
+   "id": "wk-max-strength",
+   "name": "Max Strength: Weighted Pull and Dips",
+   "level": "expert",
+   "types": [
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 50,
+   "summary": "Heavy, low-rep work with long rests.",
+   "exercises": [
+    {
+     "name": "Weighted pull-ups",
+     "sets": 6,
+     "target": "2–4 reps"
+    },
+    {
+     "name": "Weighted dips",
+     "sets": 6,
+     "target": "2–4 reps"
+    },
+    {
+     "name": "Weighted pistol squats",
+     "sets": 3,
+     "target": "3–5 per leg"
+    },
+    {
+     "name": "Dragon flag",
+     "sets": 3,
+     "target": "4–6 reps"
+    }
+   ],
+   "rest": "Rest 2–3 min",
+   "warmup": "wu-general",
+   "stretch": "st-full"
+  },
+  {
+   "id": "wk-skill-complex",
+   "name": "Skill Complex Circuit",
+   "level": "expert",
+   "types": [
+    "circuit",
+    "skill"
+   ],
+   "format": "circuit",
+   "durationMin": 40,
+   "summary": "Move through advanced holds and presses in a cycle.",
+   "exercises": [
+    {
+     "name": "Straddle front lever",
+     "sets": 4,
+     "target": "5–8 s"
+    },
+    {
+     "name": "Straddle planche progression",
+     "sets": 4,
+     "target": "4–6 s"
+    },
+    {
+     "name": "Freestanding handstand",
+     "sets": 4,
+     "target": "20–30 s"
+    },
+    {
+     "name": "Wall HSPU",
+     "sets": 4,
+     "target": "3–5 reps"
+    }
+   ],
+   "rest": "Rest 60 s between stations, 2 min between rounds",
+   "warmup": "wu-skill",
+   "stretch": "st-upper"
+  },
+  {
+   "id": "wk-one-arm-session",
+   "name": "One-Arm Pull-up Session",
+   "level": "expert",
+   "types": [
+    "skill",
+    "strength"
+   ],
+   "format": "straight",
+   "durationMin": 40,
+   "summary": "Specific one-arm pulling work; warm up thoroughly.",
+   "exercises": [
+    {
+     "name": "Weighted pull-ups",
+     "sets": 4,
+     "target": "3–5 reps"
+    },
+    {
+     "name": "Archer pull-ups",
+     "sets": 4,
+     "target": "4–6 per side"
+    },
+    {
+     "name": "One-arm pull-up negatives",
+     "sets": 4,
+     "target": "2–3 per arm"
+    },
+    {
+     "name": "One-arm dead hang",
+     "sets": 3,
+     "target": "10–20 s per arm"
+    }
+   ],
+   "rest": "Rest 2–3 min",
+   "warmup": "wu-pull",
+   "stretch": "st-upper"
+  }
+ ],
+ "skills": [
+  {
+   "name": "Planche",
+   "steps": [
+    {
+     "name": "Frog stand",
+     "metric": "hold",
+     "target": 20,
+     "sets": 3
+    },
+    {
+     "name": "Tuck planche",
+     "metric": "hold",
+     "target": 15,
+     "sets": 3
+    },
+    {
+     "name": "Advanced tuck planche",
+     "metric": "hold",
+     "target": 15,
+     "sets": 3
+    },
+    {
+     "name": "Straddle planche",
+     "metric": "hold",
+     "target": 10,
+     "sets": 3
+    },
+    {
+     "name": "Full planche",
+     "metric": "hold",
+     "target": 5,
+     "sets": 3
+    }
+   ]
+  },
+  {
+   "name": "Front lever",
+   "steps": [
+    {
+     "name": "Tuck front lever",
+     "metric": "hold",
+     "target": 20,
+     "sets": 3
+    },
+    {
+     "name": "Advanced tuck front lever",
+     "metric": "hold",
+     "target": 15,
+     "sets": 3
+    },
+    {
+     "name": "Straddle front lever",
+     "metric": "hold",
+     "target": 10,
+     "sets": 3
+    },
+    {
+     "name": "Full front lever",
+     "metric": "hold",
+     "target": 5,
+     "sets": 3
+    }
+   ]
+  },
+  {
+   "name": "Handstand",
+   "steps": [
+    {
+     "name": "Wall-assisted handstand",
+     "metric": "hold",
+     "target": 30,
+     "sets": 3
+    },
+    {
+     "name": "Freestanding handstand",
+     "metric": "hold",
+     "target": 10,
+     "sets": 3
+    },
+    {
+     "name": "Handstand press",
+     "metric": "reps",
+     "target": 3,
+     "sets": 3
+    }
+   ]
+  },
+  {
+   "name": "Pull-up",
+   "steps": [
+    {
+     "name": "Dead hang",
+     "metric": "hold",
+     "target": 30,
+     "sets": 3
+    },
+    {
+     "name": "Negative pull-up",
+     "metric": "reps",
+     "target": 5,
+     "sets": 3
+    },
+    {
+     "name": "Pull-up",
+     "metric": "reps",
+     "target": 5,
+     "sets": 3
+    },
+    {
+     "name": "Chest-to-bar pull-up",
+     "metric": "reps",
+     "target": 5,
+     "sets": 3
+    }
+   ]
+  },
+  {
+   "name": "Muscle-up",
+   "steps": [
+    {
+     "name": "Explosive pull-up",
+     "metric": "reps",
+     "target": 5,
+     "sets": 3
+    },
+    {
+     "name": "Straight bar dip",
+     "metric": "reps",
+     "target": 10,
+     "sets": 3
+    },
+    {
+     "name": "Low-bar muscle-up negative",
+     "metric": "reps",
+     "target": 3,
+     "sets": 3
+    },
+    {
+     "name": "Muscle-up",
+     "metric": "reps",
+     "target": 1,
+     "sets": 3
+    }
+   ]
+  },
+  {
+   "name": "L-sit",
+   "steps": [
+    {
+     "name": "Tuck support hold",
+     "metric": "hold",
+     "target": 20,
+     "sets": 3
+    },
+    {
+     "name": "One-leg L-sit",
+     "metric": "hold",
+     "target": 15,
+     "sets": 3
+    },
+    {
+     "name": "Full L-sit",
+     "metric": "hold",
+     "target": 15,
+     "sets": 3
+    }
+   ]
+  }
+ ],
+ "achievements": [
+  {
+   "id": "a-first",
+   "name": "First workout",
+   "icon": "fa-dumbbell",
+   "description": "Log your first workout entry.",
+   "metric": "entries",
+   "target": 1
+  },
+  {
+   "id": "a-days-10",
+   "name": "10 training days",
+   "icon": "fa-calendar-check",
+   "description": "Train on 10 different days.",
+   "metric": "workoutDays",
+   "target": 10
+  },
+  {
+   "id": "a-days-25",
+   "name": "25 training days",
+   "icon": "fa-calendar-check",
+   "description": "Train on 25 different days.",
+   "metric": "workoutDays",
+   "target": 25
+  },
+  {
+   "id": "a-days-50",
+   "name": "50 training days",
+   "icon": "fa-calendar-check",
+   "description": "Train on 50 different days.",
+   "metric": "workoutDays",
+   "target": 50
+  },
+  {
+   "id": "a-days-100",
+   "name": "100 training days",
+   "icon": "fa-fire",
+   "description": "Train on 100 different days.",
+   "metric": "workoutDays",
+   "target": 100
+  },
+  {
+   "id": "a-days-250",
+   "name": "250 training days",
+   "icon": "fa-fire-flame-curved",
+   "description": "Train on 250 different days.",
+   "metric": "workoutDays",
+   "target": 250
+  },
+  {
+   "id": "a-entries-100",
+   "name": "100 entries",
+   "icon": "fa-list-check",
+   "description": "Log 100 exercise entries.",
+   "metric": "entries",
+   "target": 100
+  },
+  {
+   "id": "a-pr-1",
+   "name": "First PR",
+   "icon": "fa-trophy",
+   "description": "Set your first personal record.",
+   "metric": "prs",
+   "target": 1
+  },
+  {
+   "id": "a-pr-10",
+   "name": "10 PRs",
+   "icon": "fa-trophy",
+   "description": "Set 10 personal records.",
+   "metric": "prs",
+   "target": 10
+  },
+  {
+   "id": "a-pr-25",
+   "name": "25 PRs",
+   "icon": "fa-trophy",
+   "description": "Set 25 personal records.",
+   "metric": "prs",
+   "target": 25
+  },
+  {
+   "id": "a-week-2",
+   "name": "2 weeks in a row",
+   "icon": "fa-calendar-week",
+   "description": "Train in 2 consecutive weeks.",
+   "metric": "streakWeeks",
+   "target": 2
+  },
+  {
+   "id": "a-week-4",
+   "name": "4 weeks in a row",
+   "icon": "fa-calendar-week",
+   "description": "Train in 4 consecutive weeks.",
+   "metric": "streakWeeks",
+   "target": 4
+  },
+  {
+   "id": "a-week-8",
+   "name": "8 weeks in a row",
+   "icon": "fa-calendar-week",
+   "description": "Train in 8 consecutive weeks.",
+   "metric": "streakWeeks",
+   "target": 8
+  },
+  {
+   "id": "a-week-12",
+   "name": "12 weeks in a row",
+   "icon": "fa-medal",
+   "description": "Train in 12 consecutive weeks.",
+   "metric": "streakWeeks",
+   "target": 12
+  },
+  {
+   "id": "a-skill-1",
+   "name": "First skill step",
+   "icon": "fa-bullseye",
+   "description": "Mark your first skill progression step done.",
+   "metric": "skillSteps",
+   "target": 1
+  },
+  {
+   "id": "a-skill-5",
+   "name": "5 skill steps",
+   "icon": "fa-bullseye",
+   "description": "Mark 5 skill progression steps done.",
+   "metric": "skillSteps",
+   "target": 5
+  },
+  {
+   "id": "a-weigh-1",
+   "name": "First weigh-in",
+   "icon": "fa-weight-scale",
+   "description": "Log your bodyweight.",
+   "metric": "bodyweightLogs",
+   "target": 1
+  },
+  {
+   "id": "a-weigh-10",
+   "name": "10 weigh-ins",
+   "icon": "fa-weight-scale",
+   "description": "Log your bodyweight 10 times.",
+   "metric": "bodyweightLogs",
+   "target": 10
+  },
+  {
+   "id": "a-measure-5",
+   "name": "Measured up",
+   "icon": "fa-ruler",
+   "description": "Log 5 body measurements.",
+   "metric": "measurementLogs",
+   "target": 5
+  },
+  {
+   "id": "a-photo-1",
+   "name": "First progress photo",
+   "icon": "fa-camera",
+   "description": "Add a progress photo.",
+   "metric": "photos",
+   "target": 1
+  },
+  {
+   "id": "a-photo-5",
+   "name": "5 progress photos",
+   "icon": "fa-camera",
+   "description": "Add 5 progress photos.",
+   "metric": "photos",
+   "target": 5
+  },
+  {
+   "id": "a-goal-1",
+   "name": "Goal reached",
+   "icon": "fa-flag-checkered",
+   "description": "Complete your first goal.",
+   "metric": "goalsDone",
+   "target": 1
+  },
+  {
+   "id": "a-goal-5",
+   "name": "5 goals reached",
+   "icon": "fa-flag-checkered",
+   "description": "Complete 5 goals.",
+   "metric": "goalsDone",
+   "target": 5
+  }
+ ],
+ "measurementTypes": [
+  {
+   "id": "chest",
+   "name": "Chest",
+   "unit": "length"
+  },
+  {
+   "id": "shoulders",
+   "name": "Shoulders",
+   "unit": "length"
+  },
+  {
+   "id": "waist",
+   "name": "Waist",
+   "unit": "length"
+  },
+  {
+   "id": "hips",
+   "name": "Hips",
+   "unit": "length"
+  },
+  {
+   "id": "neck",
+   "name": "Neck",
+   "unit": "length"
+  },
+  {
+   "id": "bicep-l",
+   "name": "Bicep (left)",
+   "unit": "length"
+  },
+  {
+   "id": "bicep-r",
+   "name": "Bicep (right)",
+   "unit": "length"
+  },
+  {
+   "id": "forearm",
+   "name": "Forearm",
+   "unit": "length"
+  },
+  {
+   "id": "thigh",
+   "name": "Thigh",
+   "unit": "length"
+  },
+  {
+   "id": "calf",
+   "name": "Calf",
+   "unit": "length"
+  },
+  {
+   "id": "bodyfat",
+   "name": "Body fat",
+   "unit": "percent"
+  }
+ ],
+ "warmups": [
+  {
+   "id": "wu-general",
+   "name": "General warm-up",
+   "minutes": 6,
+   "exercises": [
+    {
+     "name": "Jumping jacks",
+     "sets": 1,
+     "target": "45 s"
+    },
+    {
+     "name": "Arm circles",
+     "sets": 1,
+     "target": "10 reps per direction"
+    },
+    {
+     "name": "Cat-cow",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Bodyweight squats",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Scapular push-ups",
+     "sets": 1,
+     "target": "10 reps"
+    }
+   ]
+  },
+  {
+   "id": "wu-push",
+   "name": "Push warm-up",
+   "minutes": 6,
+   "exercises": [
+    {
+     "name": "Wrist rocks",
+     "sets": 1,
+     "target": "30 s"
+    },
+    {
+     "name": "Shoulder circles (CARs)",
+     "sets": 1,
+     "target": "5 reps per direction"
+    },
+    {
+     "name": "Scapular push-ups",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Incline push-ups",
+     "sets": 1,
+     "target": "8 reps",
+     "note": "Easy pace"
+    }
+   ]
+  },
+  {
+   "id": "wu-pull",
+   "name": "Pull warm-up",
+   "minutes": 6,
+   "exercises": [
+    {
+     "name": "Cat-cow",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Shoulder circles (CARs)",
+     "sets": 1,
+     "target": "5 reps per direction"
+    },
+    {
+     "name": "Dead hang",
+     "sets": 1,
+     "target": "20 s"
+    },
+    {
+     "name": "Scapular pull-ups",
+     "sets": 1,
+     "target": "8 reps"
+    },
+    {
+     "name": "Inverted rows",
+     "sets": 1,
+     "target": "6 reps",
+     "note": "Easy pace"
+    }
+   ]
+  },
+  {
+   "id": "wu-legs",
+   "name": "Legs warm-up",
+   "minutes": 6,
+   "exercises": [
+    {
+     "name": "Leg swings",
+     "sets": 1,
+     "target": "10 reps per leg"
+    },
+    {
+     "name": "Bodyweight squats",
+     "sets": 1,
+     "target": "12 reps"
+    },
+    {
+     "name": "Glute bridges",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Deep squat hold",
+     "sets": 1,
+     "target": "30 s"
+    },
+    {
+     "name": "Reverse lunges",
+     "sets": 1,
+     "target": "6 reps per leg"
+    }
+   ]
+  },
+  {
+   "id": "wu-skill",
+   "name": "Skill and wrist warm-up",
+   "minutes": 7,
+   "exercises": [
+    {
+     "name": "Wrist conditioning",
+     "sets": 1,
+     "target": "1 min"
+    },
+    {
+     "name": "Shoulder circles (CARs)",
+     "sets": 1,
+     "target": "5 reps per direction"
+    },
+    {
+     "name": "Scapular push-ups",
+     "sets": 1,
+     "target": "10 reps"
+    },
+    {
+     "name": "Scapular retraction hangs",
+     "sets": 1,
+     "target": "8 reps"
+    },
+    {
+     "name": "Hollow hold",
+     "sets": 1,
+     "target": "20 s"
+    }
+   ]
+  }
+ ],
+ "stretches": [
+  {
+   "id": "st-upper",
+   "name": "Upper-body stretch",
+   "minutes": 5,
+   "exercises": [
+    {
+     "name": "Doorway chest stretch",
+     "sets": 1,
+     "target": "30 s per side"
+    },
+    {
+     "name": "Overhead triceps stretch",
+     "sets": 1,
+     "target": "30 s per arm"
+    },
+    {
+     "name": "Lat stretch",
+     "sets": 1,
+     "target": "30 s per side"
+    },
+    {
+     "name": "Wrist flexor stretch",
+     "sets": 1,
+     "target": "30 s per arm"
+    },
+    {
+     "name": "Child's pose",
+     "sets": 1,
+     "target": "45 s"
+    }
+   ]
+  },
+  {
+   "id": "st-lower",
+   "name": "Lower-body stretch",
+   "minutes": 5,
+   "exercises": [
+    {
+     "name": "Couch stretch",
+     "sets": 1,
+     "target": "45 s per side"
+    },
+    {
+     "name": "Hamstring wall stretch",
+     "sets": 1,
+     "target": "45 s per side"
+    },
+    {
+     "name": "Pigeon stretch",
+     "sets": 1,
+     "target": "45 s per side"
+    },
+    {
+     "name": "Deep squat hold",
+     "sets": 1,
+     "target": "45 s"
+    },
+    {
+     "name": "Calf stretch",
+     "sets": 1,
+     "target": "30 s per side"
+    }
+   ]
+  },
+  {
+   "id": "st-full",
+   "name": "Full-body stretch",
+   "minutes": 6,
+   "exercises": [
+    {
+     "name": "Doorway chest stretch",
+     "sets": 1,
+     "target": "30 s per side"
+    },
+    {
+     "name": "Lat stretch",
+     "sets": 1,
+     "target": "30 s per side"
+    },
+    {
+     "name": "Child's pose",
+     "sets": 1,
+     "target": "45 s"
+    },
+    {
+     "name": "Couch stretch",
+     "sets": 1,
+     "target": "45 s per side"
+    },
+    {
+     "name": "Hamstring wall stretch",
+     "sets": 1,
+     "target": "45 s per side"
+    }
+   ]
+  }
+ ],
+ "exercises": [
+  {
+   "name": "Assisted Nordic curls",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Bird dog",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Bodyweight squats",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Bulgarian split squats",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true,
+   "aliases": [
+    "Weighted Bulgarian split squats"
+   ]
+  },
+  {
+   "name": "Burpees",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Calf stretch",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Couch stretch",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Dead bug",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Deep squat hold",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Glute bridges",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Glute bridges (single leg)",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Hamstring wall stretch",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": true,
+   "aliases": [
+    "Wall hamstring stretch"
+   ]
+  },
+  {
+   "name": "Hollow hold",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Hollow-to-arch rocks",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Jump squats",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Jumping jacks",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Leg swings",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Mountain climbers",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Pigeon stretch",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Pistol squats",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true,
+   "aliases": [
+    "Pistol squat progression",
+    "Weighted pistol squats"
+   ]
+  },
+  {
+   "name": "Plank",
+   "category": "Legs",
+   "isometric": true,
+   "unilateral": false,
+   "aliases": [
+    "Plank (weighted)"
+   ]
+  },
+  {
+   "name": "Reverse lunges",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Single-leg calf raises",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Step-ups",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Walking lunges",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Archer pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Band-assisted one-arm pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Chest-to-bar pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Chin-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Weighted chin-ups"
+   ]
+  },
+  {
+   "name": "Dead hang",
+   "category": "Pull",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Explosive pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Feet-elevated inverted rows",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Feet-elevated rows (weighted)",
+    "Inverted rows (feet elevated)"
+   ]
+  },
+  {
+   "name": "Flexed-arm hang",
+   "category": "Pull",
+   "isometric": true,
+   "unilateral": false,
+   "aliases": [
+    "Flexed-arm hang (chin over bar)"
+   ]
+  },
+  {
+   "name": "Hanging knee raises",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Hanging leg raises",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Ice cream makers",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Inverted rows",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Negative pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "One-arm dead hang",
+   "category": "Pull",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "One-arm pull-up negatives",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Band-assisted pull-ups",
+    "Pull-ups (easy)",
+    "Weighted pull-ups"
+   ]
+  },
+  {
+   "name": "Scapular pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Scapular retraction hangs",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Tuck front lever rows",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Typewriter pull-ups",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Diamond push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Dips",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Bar dips",
+    "Dips (easy)",
+    "Straight bar dips",
+    "Weighted dips"
+   ]
+  },
+  {
+   "name": "Elevated pike push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Pike push-ups (elevated)"
+   ]
+  },
+  {
+   "name": "Incline push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Partial-range wall HSPU",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Pike push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Planche push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Planche push-ups (progression)"
+   ]
+  },
+  {
+   "name": "Plank shoulder taps",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Pseudo planche push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Weighted push-ups"
+   ]
+  },
+  {
+   "name": "Scapular push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Wall HSPU",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Wall HSPU (full range)"
+   ]
+  },
+  {
+   "name": "Wall HSPU negatives",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "90/90 hip switches",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Advanced tuck front lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Advanced tuck planche",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Advanced tuck to straddle front lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Arm circles",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Cat-cow",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Chest-to-wall handstand",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Chest-to-wall plank hold",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Child's pose",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Doorway chest stretch",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Dragon flag",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Dragon flag negatives",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "False grip hangs",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Freestanding handstand",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false,
+   "aliases": [
+    "Freestanding handstand practice"
+   ]
+  },
+  {
+   "name": "Handstand press attempts",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Handstand shrugs",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "L-sit",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Lat stretch",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Low-bar muscle-up negatives",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Overhead triceps stretch",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Pancake lean",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Parallette support hold",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Planche leans",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Shoulder circles (CARs)",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Shoulder flexion stretch (wall)",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Straddle front lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Straddle planche progression",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Straddle stretch",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Thoracic extension over a roller",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Thoracic rotations",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": true
+  },
+  {
+   "name": "Tuck front lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Tuck planche",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Wall angels",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Wall handstand",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false,
+   "aliases": [
+    "Wall handstand hold"
+   ]
+  },
+  {
+   "name": "Wall slides",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Wrist conditioning",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Wrist flexor stretch",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "Wrist rocks",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
+   "name": "Wrist warm-up",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  }
+ ]
+}
