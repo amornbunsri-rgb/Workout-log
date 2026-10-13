@@ -36,6 +36,8 @@
       achievements: arr(raw.achievements),
       measurementTypes: arr(raw.measurementTypes),
       exercises: arr(raw.exercises).filter(function (x) { return x && x.name; }),
+      variations: arr(raw.variations).filter(function (v) { return v && v.exercise && arr(v.variations).length; }),
+      variationAliases: arr(raw.variationAliases).filter(function (a) { return a && a.name && a.exercise; }),
       warmups: arr(raw.warmups).filter(function (r) { return r && r.id && arr(r.exercises).length; }),
       stretches: arr(raw.stretches).filter(function (r) { return r && r.id && arr(r.exercises).length; })
     };
@@ -92,9 +94,12 @@
   // which category it belongs in, and whether it is a hold or per-side exercise.
   function exKey(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/tucked/g, 'tuck').replace(/s$/, ''); }
   var catIndex = null;
+  var varAliasIndex = null;
   function buildIndex() {
     catIndex = {};
+    varAliasIndex = {};
     if (!lib) return;
+    arr(lib.variationAliases).forEach(function (a) { varAliasIndex[exKey(a.name)] = a; });
     arr(lib.exercises).forEach(function (c) {
       catIndex[exKey(c.name)] = c;
       arr(c.aliases).forEach(function (a) { catIndex[exKey(a)] = c; });
@@ -103,6 +108,10 @@
   function resolveEx(x) {
     var nm = String(x.name || '').replace(/^[A-Z]\d\s+/, '').trim();
     if (!catIndex) buildIndex();
+    // "Negative pull-ups" is the Pull-ups exercise with the Negative variation, not an exercise of its own
+    var va = varAliasIndex[exKey(nm)];
+    var base = va ? catIndex[exKey(va.exercise)] : null;
+    if (base) return { name: base.name, category: base.category, isometric: !!base.isometric, unilateral: !!base.unilateral, variation: va.variation || null };
     var c = catIndex[exKey(nm)];
     if (c) return { name: c.name, category: c.category, isometric: !!c.isometric, unilateral: !!c.unilateral };
     var t = x.target || '';
@@ -431,6 +440,7 @@
 
   renderAll();
   ready.then(function () {
+    if (App.refreshVariations) App.refreshVariations();
     if ((App.skillLineNames && App.skillLineNames().length) || mine.length) state.tab = 'mine';
     notify(); renderAll();
   });

@@ -13,6 +13,7 @@
   let data = {};
   let bodyweightLog = []; // [{ id, date: 'YYYY-MM-DD', kg }] from the main app's Bodyweight section
   let selectedExercise = null;
+  let selectedVariation = 'all'; // 'all', '__none__' (sets without a variation) or a variation name
   let rangeMode = 'week'; // week | month | year | stats
   let periodOffset = 0;
   let setsChartInstance = null;
@@ -337,6 +338,7 @@
       row.innerHTML = `<span class="dot" style="background:${color}"></span><span>${escapeHtml(item.name)}</span>${catTag}<span class="count">${item.count}</span>`;
       row.onclick = () => {
         selectedExercise = item.name;
+        selectedVariation = 'all';
         periodOffset = 0;
         renderExerciseNav();
         renderAll();
@@ -380,9 +382,38 @@
     return String(range.start.getFullYear());
   }
 
+  function setVarKey(s) { return (s && typeof s === 'object' && s.variation) ? String(s.variation) : ''; }
+  function entriesOfSelectedExercise() { return allEntries().filter(e => e.exercise === selectedExercise); }
+  // With a variation chosen, only that variation's sets count, so every chart and stat below follows it.
   function entriesForSelected() {
-    return allEntries().filter(e => e.exercise === selectedExercise);
+    const all = entriesOfSelectedExercise();
+    if (selectedVariation === 'all') return all;
+    const want = selectedVariation === '__none__' ? '' : selectedVariation;
+    return all.map(e => {
+      if (!(e.sets || []).length) return want === '' ? e : null; // hold attempts and distance entries count as standard
+      const sets = e.sets.filter(s => setVarKey(s) === want);
+      return sets.length ? Object.assign({}, e, { sets }) : null;
+    }).filter(Boolean);
   }
+  // chips: All / Standard / each variation that exists in the logged data (hidden when none was ever used)
+  function renderVariationFilter() {
+    const box = document.getElementById('variationFilter');
+    const counts = {};
+    entriesOfSelectedExercise().forEach(e => (e.sets || []).forEach(s => { const k = setVarKey(s); counts[k] = (counts[k] || 0) + 1; }));
+    const named = Object.keys(counts).filter(k => k !== '').sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+    if (!named.length) { box.classList.add('hidden'); box.innerHTML = ''; if (selectedVariation !== 'all') selectedVariation = 'all'; return; }
+    const chips = [['all', 'All']];
+    if (counts['']) chips.push(['__none__', 'Standard']);
+    named.forEach(k => chips.push([k, k]));
+    if (!chips.some(c => c[0] === selectedVariation)) selectedVariation = 'all';
+    box.innerHTML = chips.map(c => `<button type="button" class="lib-chip${c[0] === selectedVariation ? ' on' : ''}" data-var="${escapeHtml(c[0])}" aria-pressed="${c[0] === selectedVariation}">${escapeHtml(c[1])}${c[0] !== 'all' ? ' <small>' + (c[0] === '__none__' ? counts[''] : counts[c[0]]) + '</small>' : ''}</button>`).join('');
+    box.classList.remove('hidden');
+  }
+  document.getElementById('variationFilter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-var]'); if (!b) return;
+    selectedVariation = b.dataset.var;
+    renderAll();
+  });
 
   function entriesInRange(range) {
     const startStr = fmtDate(range.start), endStr = fmtDate(range.end);
@@ -771,7 +802,8 @@
 
   function renderAll() {
     if (!selectedExercise) return;
-    document.getElementById('selectedExerciseLabel').textContent = selectedExercise;
+    renderVariationFilter();
+    document.getElementById('selectedExerciseLabel').textContent = selectedExercise + (selectedVariation === 'all' ? '' : ' · ' + (selectedVariation === '__none__' ? 'Standard' : selectedVariation));
 
     if (rangeMode === 'stats') {
       document.getElementById('periodView').classList.add('hidden');

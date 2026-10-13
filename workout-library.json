@@ -3047,6 +3047,12 @@
    "unilateral": false
   },
   {
+   "name": "Muscle-up",
+   "category": "Pull",
+   "isometric": false,
+   "unilateral": false
+  },
+  {
    "name": "Negative pull-ups",
    "category": "Pull",
    "isometric": false,
@@ -3056,6 +3062,12 @@
    "name": "One-arm dead hang",
    "category": "Pull",
    "isometric": true,
+   "unilateral": true
+  },
+  {
+   "name": "One-arm pull-up",
+   "category": "Pull",
+   "isometric": false,
    "unilateral": true
   },
   {
@@ -3226,6 +3238,12 @@
    "unilateral": false
   },
   {
+   "name": "Back lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
    "name": "Cat-cow",
    "category": "Skill",
    "isometric": false,
@@ -3283,6 +3301,12 @@
    ]
   },
   {
+   "name": "Front lever",
+   "category": "Skill",
+   "isometric": true,
+   "unilateral": false
+  },
+  {
    "name": "Handstand press attempts",
    "category": "Skill",
    "isometric": false,
@@ -3292,6 +3316,12 @@
    "name": "Handstand shrugs",
    "category": "Skill",
    "isometric": false,
+   "unilateral": false
+  },
+  {
+   "name": "Human flag",
+   "category": "Skill",
+   "isometric": true,
    "unilateral": false
   },
   {
@@ -3434,6 +3464,357 @@
    "category": "Skill",
    "isometric": true,
    "unilateral": false
+  }
+ ],
+ "variations": [
+  {
+   "exercise": "Pull-ups",
+   "measure": "reps",
+   "variations": [
+    "Banded",
+    "Jumping",
+    "Negative",
+    "Wide",
+    "Close",
+    "Neutral",
+    "Chin-up",
+    "Mixed grip",
+    "Paused",
+    "Slow tempo",
+    "Explosive",
+    "High",
+    "Chest-to-bar",
+    "L-sit",
+    "Soviet",
+    "Archer",
+    "Typewriter"
+   ]
+  },
+  {
+   "exercise": "Dead hang",
+   "measure": "hold",
+   "variations": [
+    "Active",
+    "Towel",
+    "False grip",
+    "Feet-assisted one-arm",
+    "One-arm"
+   ]
+  },
+  {
+   "exercise": "One-arm pull-up",
+   "measure": "reps",
+   "variations": [
+    "Band-assisted",
+    "Towel-assisted",
+    "Negative",
+    "Archer-assisted"
+   ]
+  },
+  {
+   "exercise": "Muscle-up",
+   "measure": "reps",
+   "variations": [
+    "Explosive pull-up",
+    "Chest-to-bar",
+    "Low-bar transition",
+    "Jumping",
+    "Negative",
+    "Strict"
+   ]
+  },
+  {
+   "exercise": "Inverted rows",
+   "measure": "reps",
+   "variations": [
+    "Incline",
+    "Horizontal",
+    "Feet-elevated",
+    "Archer",
+    "One-arm",
+    "Wide",
+    "Close",
+    "Underhand"
+   ]
+  },
+  {
+   "exercise": "Front lever",
+   "measure": "hold",
+   "variations": [
+    "Tuck",
+    "Advanced tuck",
+    "One-leg",
+    "Straddle",
+    "Half-lay",
+    "Full",
+    "Banded"
+   ]
+  },
+  {
+   "exercise": "Back lever",
+   "measure": "hold",
+   "variations": [
+    "Tuck",
+    "Advanced tuck",
+    "One-leg",
+    "Straddle",
+    "Half-lay",
+    "Full",
+    "Banded"
+   ]
+  },
+  {
+   "exercise": "Human flag",
+   "measure": "hold",
+   "variations": [
+    "Clutch",
+    "Tuck",
+    "Advanced tuck",
+    "One-leg",
+    "Straddle",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Hanging leg raises",
+   "measure": "reps",
+   "variations": [
+    "Knee raise",
+    "Bent-leg",
+    "Straight-leg",
+    "Toes-to-bar",
+    "Windshield wipers"
+   ]
+  }
+ ],
+ "variationAliases": [
+  {
+   "name": "Pull up",
+   "exercise": "Pull-ups"
+  },
+  {
+   "name": "Pullups",
+   "exercise": "Pull-ups"
+  },
+  {
+   "name": "Wide",
+   "exercise": "Pull-ups",
+   "variation": "Wide"
+  },
+  {
+   "name": "Wide pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Wide"
+  },
+  {
+   "name": "Close-grip pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Close"
+  },
+  {
+   "name": "Chin-ups",
+   "exercise": "Pull-ups",
+   "variation": "Chin-up"
+  },
+  {
+   "name": "Chin up",
+   "exercise": "Pull-ups",
+   "variation": "Chin-up"
+  },
+  {
+   "name": "Negative pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Negative"
+  },
+  {
+   "name": "Neg",
+   "exercise": "Pull-ups",
+   "variation": "Negative"
+  },
+  {
+   "name": "Jumping pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Jumping"
+  },
+  {
+   "name": "Band-assisted pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Banded"
+  },
+  {
+   "name": "Banded pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Banded"
+  },
+  {
+   "name": "Chest-to-bar pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Chest-to-bar"
+  },
+  {
+   "name": "Explosive pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Explosive"
+  },
+  {
+   "name": "High",
+   "exercise": "Pull-ups",
+   "variation": "High"
+  },
+  {
+   "name": "High pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "High"
+  },
+  {
+   "name": "Soviet",
+   "exercise": "Pull-ups",
+   "variation": "Soviet"
+  },
+  {
+   "name": "Soviet pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Soviet"
+  },
+  {
+   "name": "Archer",
+   "exercise": "Pull-ups",
+   "variation": "Archer"
+  },
+  {
+   "name": "Aecher",
+   "exercise": "Pull-ups",
+   "variation": "Archer"
+  },
+  {
+   "name": "Archer pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Archer"
+  },
+  {
+   "name": "Typewriter pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Typewriter"
+  },
+  {
+   "name": "Scap",
+   "exercise": "Scapular pull-ups"
+  },
+  {
+   "name": "Scapular pull-up",
+   "exercise": "Scapular pull-ups"
+  },
+  {
+   "name": "Muscle up",
+   "exercise": "Muscle-up"
+  },
+  {
+   "name": "Muscle-ups",
+   "exercise": "Muscle-up"
+  },
+  {
+   "name": "Low-bar muscle-up negatives",
+   "exercise": "Muscle-up",
+   "variation": "Negative"
+  },
+  {
+   "name": "One arm pull-up negatives",
+   "exercise": "One-arm pull-up",
+   "variation": "Negative"
+  },
+  {
+   "name": "One-arm pull-up negatives",
+   "exercise": "One-arm pull-up",
+   "variation": "Negative"
+  },
+  {
+   "name": "Feet-elevated inverted rows",
+   "exercise": "Inverted rows",
+   "variation": "Feet-elevated"
+  },
+  {
+   "name": "Australian rows",
+   "exercise": "Inverted rows"
+  },
+  {
+   "name": "OA dead hang",
+   "exercise": "Dead hang",
+   "variation": "One-arm"
+  },
+  {
+   "name": "One-arm dead hang",
+   "exercise": "Dead hang",
+   "variation": "One-arm"
+  },
+  {
+   "name": "False grip hangs",
+   "exercise": "Dead hang",
+   "variation": "False grip"
+  },
+  {
+   "name": "Front lever band",
+   "exercise": "Front lever",
+   "variation": "Banded"
+  },
+  {
+   "name": "Tucked lever",
+   "exercise": "Front lever",
+   "variation": "Tuck"
+  },
+  {
+   "name": "Tuck front lever",
+   "exercise": "Front lever",
+   "variation": "Tuck"
+  },
+  {
+   "name": "Advanced tuck front lever",
+   "exercise": "Front lever",
+   "variation": "Advanced tuck"
+  },
+  {
+   "name": "Straddle front lever",
+   "exercise": "Front lever",
+   "variation": "Straddle"
+  },
+  {
+   "name": "Advanced tuck to straddle front lever",
+   "exercise": "Front lever",
+   "variation": "Straddle"
+  },
+  {
+   "name": "Full lever",
+   "exercise": "Front lever",
+   "variation": "Full"
+  },
+  {
+   "name": "Full front lever",
+   "exercise": "Front lever",
+   "variation": "Full"
+  },
+  {
+   "name": "Tuck back lever",
+   "exercise": "Back lever",
+   "variation": "Tuck"
+  },
+  {
+   "name": "Advanced tuck back lever",
+   "exercise": "Back lever",
+   "variation": "Advanced tuck"
+  },
+  {
+   "name": "Straddle back lever",
+   "exercise": "Back lever",
+   "variation": "Straddle"
+  },
+  {
+   "name": "Full back lever",
+   "exercise": "Back lever",
+   "variation": "Full"
+  },
+  {
+   "name": "Hanging knee raises",
+   "exercise": "Hanging leg raises",
+   "variation": "Knee raise"
   }
  ]
 }

@@ -12,7 +12,7 @@ const NETWORK_TIMEOUT_MS = 4000;
 const APP_FILES = [
   './', 'index.html', 'workout-log-standalone.html', 'workout-graph.html', 'workout-log-style.css',
   'workout-shared.js', 'workout-log.js', 'workout-graph.js', 'workout-tools.js', 'workout-library.js',
-  'workout-library.json', 'workout-profile.js', 'workout-backup.js', 'workout-pwa.js', 'manifest.webmanifest',
+  'workout-library.json', 'workout-profile.js', 'workout-backup.js', 'workout-variations.js', 'workout-pwa.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-64.png'
 ];
 const CDN_ASSETS = [
