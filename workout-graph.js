@@ -11,7 +11,9 @@
   let exerciseLists = {};
   let categoryColors = {};
   let data = {};
-  let bodyweightLog = []; // [{ id, date: 'YYYY-MM-DD', kg }] from the main app's Bodyweight section
+  let bodyweightLog = [];
+  let measurementsLog = []; // [{ id, type, date, value }] from the profile's Measurements (values in cm / % / degrees)
+  let libMeasure = [];      // measurement types from workout-library.json (range-of-motion types list the exercises they relate to) // [{ id, date: 'YYYY-MM-DD', kg }] from the main app's Bodyweight section
   let selectedExercise = null;
   let selectedVariation = 'all'; // 'all', '__none__' (sets without a variation) or a variation name
   let rangeMode = 'week'; // week | month | year | stats
@@ -64,6 +66,7 @@
     }
     data = obj.data || {};
     bodyweightLog = cleanBodyweight(obj.bodyweight);
+    measurementsLog = (obj.parts && Array.isArray(obj.parts.measurements)) ? obj.parts.measurements.filter(m => m && m.type && m.date && isFinite(m.value)) : [];
   }
   function cleanBodyweight(arr) {
     return Array.isArray(arr) ? arr.filter(e => e && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Number(e.kg) > 0).map(e => ({ id: e.id, date: e.date, kg: Number(e.kg) })) : [];
@@ -106,6 +109,7 @@
       }
       if (dataRaw) data = JSON.parse(dataRaw) || {};
       bodyweightLog = cleanBodyweight(JSON.parse(localStorage.getItem(BODYWEIGHT_KEY) || '[]'));
+      try { const ml = JSON.parse(localStorage.getItem('workout-log-measurements-v1') || '[]'); measurementsLog = Array.isArray(ml) ? ml.filter(m => m && m.type && m.date && isFinite(m.value)) : []; } catch (e2) { measurementsLog = []; }
       return true;
     } catch (e) { return false; }
   }
@@ -174,6 +178,7 @@
   });
   function loadUnits() { return Shared.loadUnits(); }
   let unitSystem = loadUnits();
+  let weekStart = Shared.loadWeekStart();
   function renderUnitsToggle() {
     document.querySelectorAll('#unitsToggle .mode-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.units === unitSystem);
@@ -182,13 +187,48 @@
   document.querySelectorAll('#unitsToggle .mode-btn').forEach(btn => {
     btn.onclick = () => {
       unitSystem = btn.dataset.units;
-      try { localStorage.setItem(UNITS_KEY, unitSystem); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(UNITS_KEY, unitSystem); localStorage.setItem('workout-log-prefs-ts-v1', String(Date.now())); } catch (e) { /* ignore */ }
       renderUnitsToggle();
       if (selectedExercise) renderAll();
     };
   });
   renderUnitsToggle();
+  function renderWeekToggle() { document.querySelectorAll('#weekToggle .mode-btn').forEach(btn => btn.classList.toggle('active', +btn.dataset.week === weekStart)); }
+  document.querySelectorAll('#weekToggle .mode-btn').forEach(btn => {
+    btn.onclick = () => {
+      weekStart = +btn.dataset.week;
+      try { localStorage.setItem(Shared.WEEK_KEY, String(weekStart)); localStorage.setItem('workout-log-prefs-ts-v1', String(Date.now())); } catch (e) { /* ignore */ }
+      renderWeekToggle();
+      renderActivityHeatmap();
+      renderBalance();
+      renderStraightArm();
+      if (selectedExercise) renderAll();
+    };
+  });
+  renderWeekToggle();
   renderModeToggle();
+
+  // Recalculate PRs: the PR rules live in the main app, so it is opened invisibly, does the work, and reports back.
+  document.getElementById('recalcPrBtn').onclick = () => {
+    const status = document.getElementById('recalcPrStatus'), btn = document.getElementById('recalcPrBtn');
+    if (location.protocol === 'file:') { status.textContent = 'This needs the hosted app, not a file opened from disk.'; return; }
+    btn.disabled = true; status.textContent = 'Recalculating…';
+    const frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+    frame.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden;';
+    let finished = false, timer = 0;
+    function finish(msg) { if (finished) return; finished = true; clearTimeout(timer); window.removeEventListener('message', onMsg); frame.remove(); btn.disabled = false; status.textContent = msg; }
+    function onMsg(ev) {
+      if (ev.source !== frame.contentWindow || !ev.data || ev.data.type !== 'recalc-done') return;
+      const n = ev.data.n || 0;
+      if (tryLoadFromMainAppKeys()) init(); // pick up the corrected badges
+      finish(n ? 'PR badges updated on ' + n + (n === 1 ? ' entry' : ' entries') : 'PR badges are already up to date');
+    }
+    window.addEventListener('message', onMsg);
+    timer = setTimeout(() => finish('Could not reach the main app. Open it once, then try again.'), 20000);
+    frame.src = 'workout-log-standalone.html#recalc';
+    document.body.appendChild(frame);
+  };
 
   function allEntries() {
     const flat = [];
@@ -197,6 +237,188 @@
   }
 
   // ---- activity heatmap: GitHub-style contribution grid, all exercises combined ----
+  // ---- best per session (plateaus), range of motion, straight-arm load ----
+  function exKey(n) { return Shared.exKey(n); }
+  function dateLabels(dates) {
+    const multi = dates.length && dates[0].slice(0, 4) !== dates[dates.length - 1].slice(0, 4);
+    return dates.map(d => new Date(d + 'T00:00:00').toLocaleDateString(undefined, multi ? { month: 'short', day: 'numeric', year: '2-digit' } : { month: 'short', day: 'numeric' }));
+  }
+  // one point per training day: the best hold (or best reps) that day, a 5-session average, and the best estimated 1RM of added weight
+  function trendSeries(entries, isometric) {
+    const byDate = {};
+    entries.forEach(e => {
+      if (!e.date) return;
+      const o = byDate[e.date] || (byDate[e.date] = { main: 0, e1: null });
+      (e.sets || []).forEach(s => {
+        if (!s || typeof s !== 'object' || s.formBroke) return; // sloppy sets do not count
+        const v = Shared.setReps(s);
+        if (v > o.main) o.main = v;
+        if (!isometric && Number(s.kg) > 0) {
+          const bw = bodyweightOn(e.date);
+          const x = Shared.est1rmAdded(bw ? bw.kg : 0, Number(s.kg), v);
+          if (x != null && (o.e1 == null || x > o.e1)) o.e1 = x;
+        }
+      });
+      if (isometric) (e.attempts || []).forEach(a => { if (Number(a) > o.main) o.main = Number(a); });
+    });
+    const dates = Object.keys(byDate).filter(d => byDate[d].main > 0).sort();
+    const main = dates.map(d => byDate[d].main);
+    const avg = main.map((_, i) => { const w = main.slice(Math.max(0, i - 4), i + 1); return round2(w.reduce((a, b) => a + b, 0) / w.length); });
+    const e1 = dates.map(d => byDate[d].e1 != null ? round2(kgToDisplay(byDate[d].e1)) : null);
+    return { dates, main, avg, e1, hasE1: e1.some(x => x != null) };
+  }
+  function makeTrendChart(ctx, entries, isometric) {
+    const ser = trendSeries(entries, isometric);
+    if (!ser.dates.length) return null;
+    const color = accentColor();
+    const datasets = [
+      { label: isometric ? 'Best hold per session (s)' : 'Best reps per session', data: ser.main, borderColor: color, backgroundColor: color, tension: 0.2, pointRadius: 3, yAxisID: 'y' },
+      { label: '5-session average', data: ser.avg, borderColor: '#999999', borderDash: [5, 4], pointRadius: 0, tension: 0.3, yAxisID: 'y' }
+    ];
+    const scales = { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 8 } } };
+    if (ser.hasE1) {
+      datasets.push({ label: 'Est. 1RM, added load (' + weightUnitLabel() + ')', data: ser.e1, borderColor: SET_COLORS[4], backgroundColor: SET_COLORS[4], pointRadius: 3, tension: 0.2, spanGaps: true, yAxisID: 'y2' });
+      scales.y2 = { position: 'right', grid: { drawOnChartArea: false } };
+    }
+    return new Chart(ctx, { type: 'line', data: { labels: dateLabels(ser.dates), datasets }, options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true } }, scales } });
+  }
+  let trendChartInstance = null, romChartInstance = null, straightChartInstance = null;
+  function renderTrendCard(entries, isometric, isDistance) {
+    const card = document.getElementById('trendCard');
+    if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+    const ser = trendSeries(entries, isometric);
+    if (isDistance || typeof Chart === 'undefined' || ser.dates.length < 2) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    trendChartInstance = makeTrendChart(document.getElementById('trendChart').getContext('2d'), entries, isometric);
+    let best = 0, bestIdx = -1;
+    ser.main.forEach((v, i) => { if (v > best) { best = v; bestIdx = i; } });
+    const since = ser.main.length - 1 - bestIdx;
+    document.getElementById('trendNote').textContent = (ser.main.length >= 6 && since >= 5)
+      ? 'Plateau: no new best in ' + since + ' sessions (the best was ' + best + (isometric ? ' s' : ' reps') + ' on ' + ser.dates[bestIdx] + ').'
+      : 'Best so far: ' + best + (isometric ? ' s' : ' reps') + ' on ' + ser.dates[bestIdx] + '. The dashed line is the average of your last 5 sessions. Sets where form broke are left out.';
+  }
+  function romShown(t, v) { return t.unit === 'length' && unitSystem === 'imperial' ? round2(v / 2.54) : round2(v); }
+  function romUnit(t) { return t.unit === 'degrees' ? '°' : (t.unit === 'percent' ? '%' : (unitSystem === 'imperial' ? 'in' : 'cm')); }
+  function renderRomCard(entries, isometric, isDistance) {
+    const card = document.getElementById('romCard');
+    if (romChartInstance) { romChartInstance.destroy(); romChartInstance = null; }
+    if (isDistance || typeof Chart === 'undefined' || !selectedExercise) { card.classList.add('hidden'); return; }
+    const k = exKey(selectedExercise);
+    const types = libMeasure.filter(t => Array.isArray(t.exercises) && t.exercises.some(n => exKey(n) === k) && measurementsLog.some(m => m.type === t.id));
+    if (!types.length) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    const ser = trendSeries(entries, isometric), mainBy = {};
+    ser.dates.forEach((d, i) => { mainBy[d] = ser.main[i]; });
+    const set = new Set(ser.dates);
+    types.forEach(t => measurementsLog.filter(m => m.type === t.id).forEach(m => set.add(m.date)));
+    const dates = Array.from(set).sort();
+    const datasets = types.map((t, i) => ({
+      label: t.name + ' (' + romUnit(t) + ')', yAxisID: 'y', spanGaps: true, tension: 0.2, pointRadius: 4,
+      borderColor: SET_COLORS[(i + 1) % SET_COLORS.length], backgroundColor: SET_COLORS[(i + 1) % SET_COLORS.length],
+      data: dates.map(d => { const m = measurementsLog.find(x => x.type === t.id && x.date === d); return m ? romShown(t, Number(m.value)) : null; })
+    }));
+    datasets.push({ label: isometric ? 'Best hold (s)' : 'Best reps', yAxisID: 'y2', spanGaps: true, borderDash: [5, 4], pointRadius: 3, borderColor: accentColor(), backgroundColor: accentColor(), data: dates.map(d => mainBy[d] != null ? mainBy[d] : null) });
+    romChartInstance = new Chart(document.getElementById('romChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: dateLabels(dates), datasets },
+      options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true } }, scales: { y: { position: 'left' }, y2: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } }, x: { ticks: { maxTicksLimit: 8 } } } }
+    });
+    document.getElementById('romNote').textContent = 'Your range-of-motion measurements (left axis) next to your best ' + (isometric ? 'hold' : 'reps') + ' per session (right axis, dashed). Add measurements in Profile.';
+  }
+  function loadLibraryTypes() {
+    try { const raw = JSON.parse(localStorage.getItem('workout-library-cache-v1')); if (raw && Array.isArray(raw.measurementTypes)) { libMeasure = raw.measurementTypes; return; } } catch (e) { /* fall through */ }
+    if (typeof fetch === 'function') fetch('workout-library.json').then(r => r.json()).then(j => { libMeasure = (j && j.measurementTypes) || []; if (selectedExercise) renderAll(); }).catch(() => { /* no library: no range-of-motion chart */ });
+  }
+  loadLibraryTypes();
+  function isSAName(name) {
+    for (const cat of categories) { const f = (exerciseLists[cat] || []).find(e => e.name === name); if (f) return Shared.isStraightArm(f, name); }
+    return Shared.isStraightArm(null, name);
+  }
+  function renderStraightArm() {
+    const card = document.getElementById('straightCard');
+    if (!card) return;
+    if (straightChartInstance) { straightChartInstance.destroy(); straightChartInstance = null; }
+    const rep = Shared.straightArmReport(allEntries(), isSAName, weekStart, fmtDate(new Date()));
+    if (!rep.hasData || typeof Chart === 'undefined') { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    const color = accentColor();
+    straightChartInstance = new Chart(document.getElementById('straightChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels: rep.rows.map(r => new Date(r.week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })), datasets: [{ label: 'Straight-arm holding (s)', data: rep.rows.map(r => Math.round(r.sec)), backgroundColor: color, borderRadius: 3 }] },
+      options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: c => rep.rows[c.dataIndex].sets + ' sets' } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Seconds per week' } } } }
+    });
+    const cur = rep.rows[rep.rows.length - 1];
+    document.getElementById('straightNow').textContent = 'This week: ' + Math.round(cur.sec) + ' s of straight-arm holding over ' + cur.sets + ' sets · average of the 4 weeks before: ' + Math.round(rep.avg) + ' s';
+    document.getElementById('straightFlags').innerHTML = rep.flags.map(f => `<div class="balance-flag ${f[0]}">${escapeHtml(f[1])}</div>`).join('');
+  }
+
+  // ---- weekly balance: sets per movement pattern, last 8 weeks, with flags ----
+  let balanceChartInstance = null;
+  function patternOfExercise(name) {
+    for (const cat of categories) {
+      const f = (exerciseLists[cat] || []).find(e => e.name === name);
+      if (f) return Shared.patternOf(f, name);
+    }
+    return Shared.guessPattern(name);
+  }
+  function balanceFlags(rows) {
+    const flags = [];
+    const sum = (rs, ids) => rs.reduce((a, r) => a + ids.reduce((b, id) => b + (r.c[id] || 0), 0), 0);
+    const last4 = rows.slice(-4), last2 = rows.slice(-2);
+    const push4 = sum(last4, ['vpush', 'hpush']), pull4 = sum(last4, ['vpull', 'hpull']);
+    if (push4 + pull4 >= 8) {
+      const ratio = push4 / Math.max(pull4, 0.5);
+      if (ratio > 1.25) flags.push(['warn', `Push-heavy over the last 4 weeks: ${push4} push vs ${pull4} pull sets (${ratio.toFixed(1)}:1). Aim for about 1:1, or a little more pulling, to look after your shoulders.`]);
+      else if (ratio < 0.6) flags.push(['note', `Pull-heavy over the last 4 weeks: ${push4} push vs ${pull4} pull sets. Add some pushing if your push skills have stalled.`]);
+    }
+    const ratios = last4.map(r => { const a = (r.c.vpush || 0) + (r.c.hpush || 0), b = (r.c.vpull || 0) + (r.c.hpull || 0); return a + b >= 4 ? a / Math.max(b, 0.5) : null; }).filter(x => x != null);
+    if (ratios.length >= 3) {
+      const t = ratios.slice(-3);
+      if (t[0] < t[1] && t[1] < t[2] && t[2] > 1) flags.push(['warn', `Drifting toward push: the push to pull ratio went ${t.map(x => x.toFixed(1)).join(' → ')} over the last 3 weeks.`]);
+      else if (t[0] > t[1] && t[1] > t[2] && t[2] < 0.8) flags.push(['note', `Drifting toward pull: the push to pull ratio went ${t.map(x => x.toFixed(1)).join(' → ')} over the last 3 weeks.`]);
+    }
+    [['push', 'vpush', 'hpush'], ['pull', 'vpull', 'hpull']].forEach(g => {
+      const v = sum(last4, [g[1]]), h = sum(last4, [g[2]]);
+      if (Math.max(v, h) >= 6 && Math.min(v, h) * 2.5 < Math.max(v, h)) flags.push(['note', `${v > h ? 'Vertical' : 'Horizontal'} ${g[0]} outweighs ${v > h ? 'horizontal' : 'vertical'} ${g[0]} (${v} vs ${h} sets in 4 weeks).`]);
+    });
+    const other2 = sum(last2, ['vpush', 'hpush', 'vpull', 'hpull', 'core', 'legs']);
+    if (other2 >= 8 && sum(last2, ['legs']) === 0) flags.push(['warn', 'No leg work in the last 2 weeks.']);
+    if (other2 >= 8 && sum(last2, ['core']) === 0) flags.push(['note', 'No dedicated core work in the last 2 weeks.']);
+    if (!flags.length) flags.push(['ok', push4 + pull4 >= 8 ? 'No imbalances flagged over the last 4 weeks.' : 'Log a few more weeks of training to see balance patterns.']);
+    return flags;
+  }
+  function renderBalance() {
+    const card = document.getElementById('balanceCard');
+    if (!card) return;
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const base = new Date(Shared.weekStartISO(fmtDate(t), weekStart) + 'T00:00:00');
+    const rows = [], idx = {};
+    for (let i = 7; i >= 0; i--) { const d = new Date(base); d.setDate(d.getDate() - 7 * i); const k = fmtDate(d); idx[k] = rows.length; rows.push({ week: k, c: {} }); }
+    allEntries().forEach(e => {
+      if (!e.date || !e.exercise) return;
+      const r = rows[idx[Shared.weekStartISO(e.date, weekStart)]];
+      if (!r) return;
+      const p = patternOfExercise(e.exercise);
+      if (!p) return;
+      const n = (e.sets && e.sets.length) ? e.sets.length : ((e.distance != null || (e.attempts && e.attempts.length)) ? 1 : 0);
+      r.c[p] = (r.c[p] || 0) + n;
+    });
+    if (balanceChartInstance) { balanceChartInstance.destroy(); balanceChartInstance = null; }
+    if (!rows.some(r => Object.keys(r.c).some(k => r.c[k] > 0)) || typeof Chart === 'undefined') { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    balanceChartInstance = new Chart(document.getElementById('balanceChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: rows.map(r => new Date(r.week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+        datasets: Shared.PATTERNS.map(p => ({ label: p.label, data: rows.map(r => r.c[p.id] || 0), backgroundColor: p.color, borderRadius: 2 }))
+      },
+      options: { responsive: true, plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+    const cur = rows[rows.length - 1].c;
+    const push = (cur.vpush || 0) + (cur.hpush || 0), pull = (cur.vpull || 0) + (cur.hpull || 0);
+    document.getElementById('balanceNow').textContent = 'This week (sets): ' + Shared.PATTERNS.filter(p => p.id !== 'mobility').map(p => p.short + ' ' + (cur[p.id] || 0)).join(' · ') + (push + pull ? ' · push:pull ' + push + ':' + pull : '');
+    document.getElementById('balanceFlags').innerHTML = balanceFlags(rows).map(f => `<div class="balance-flag ${f[0]}">${escapeHtml(f[1])}</div>`).join('');
+  }
   function renderActivityHeatmap() {
     const card = document.getElementById('activityHeatmapCard');
     const grid = document.getElementById('activityHeatmapGrid');
@@ -213,7 +435,7 @@
     const WEEKS = 53;
     const start = new Date(today);
     start.setDate(start.getDate() - (WEEKS * 7 - 1));
-    start.setDate(start.getDate() - start.getDay()); // roll back to the Sunday on/before start
+    start.setDate(start.getDate() - ((start.getDay() - weekStart + 7) % 7)); // roll back to the first day of the week
 
     const days = [];
     const cursor = new Date(start);
@@ -356,7 +578,7 @@
     const now = new Date();
     if (rangeMode === 'week') {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const dow = (d.getDay() + 6) % 7; // 0 = Monday
+      const dow = (d.getDay() - weekStart + 7) % 7; // 0 = first day of the week
       d.setDate(d.getDate() - dow + periodOffset * 7);
       const start = new Date(d);
       const end = new Date(d);
@@ -390,7 +612,7 @@
     if (selectedVariation === 'all') return all;
     const want = selectedVariation === '__none__' ? '' : selectedVariation;
     return all.map(e => {
-      if (!(e.sets || []).length) return want === '' ? e : null; // hold attempts and distance entries count as standard
+      if (!(e.sets || []).length) return (e.variation || '') === want ? e : null; // hold attempts count as standard; runs carry their variation on the entry
       const sets = e.sets.filter(s => setVarKey(s) === want);
       return sets.length ? Object.assign({}, e, { sets }) : null;
     }).filter(Boolean);
@@ -399,7 +621,10 @@
   function renderVariationFilter() {
     const box = document.getElementById('variationFilter');
     const counts = {};
-    entriesOfSelectedExercise().forEach(e => (e.sets || []).forEach(s => { const k = setVarKey(s); counts[k] = (counts[k] || 0) + 1; }));
+    entriesOfSelectedExercise().forEach(e => {
+      if (!(e.sets || []).length && e.distance != null) { const k = e.variation || ''; counts[k] = (counts[k] || 0) + 1; }
+      (e.sets || []).forEach(s => { const k = setVarKey(s); counts[k] = (counts[k] || 0) + 1; });
+    });
     const named = Object.keys(counts).filter(k => k !== '').sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
     if (!named.length) { box.classList.add('hidden'); box.innerHTML = ''; if (selectedVariation !== 'all') selectedVariation = 'all'; return; }
     const chips = [['all', 'All']];
@@ -486,11 +711,12 @@
   // same-index bars per label automatically), instead of one long flat strip.
   function perSetSeries(entries) {
     const byDate = {};
+    let uni = false;
     entries.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(e => {
       if (!byDate[e.date]) byDate[e.date] = [];
       (e.sets || []).forEach(s => {
-        const value = typeof s.reps === 'number' ? s.reps : (s.left || 0) + (s.right || 0);
-        byDate[e.date].push(value);
+        if (typeof s.reps === 'number') byDate[e.date].push({ l: s.reps, r: s.reps });
+        else { uni = true; byDate[e.date].push({ l: s.left || 0, r: s.right || 0 }); }
       });
     });
     const dates = Object.keys(byDate).sort();
@@ -498,7 +724,11 @@
     const shortDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const datasets = [];
     for (let i = 0; i < maxSets; i++) {
-      datasets.push({ label: 'Set ' + (i + 1), data: dates.map(d => (byDate[d][i] != null ? byDate[d][i] : null)) });
+      if (!uni) datasets.push({ label: 'Set ' + (i + 1), idx: i, data: dates.map(d => (byDate[d][i] ? byDate[d][i].l : null)) });
+      else {
+        datasets.push({ label: 'Set ' + (i + 1) + ' L', idx: i, side: 'l', data: dates.map(d => (byDate[d][i] ? byDate[d][i].l : null)) });
+        datasets.push({ label: 'Set ' + (i + 1) + ' R', idx: i, side: 'r', data: dates.map(d => (byDate[d][i] ? byDate[d][i].r : null)) });
+      }
     }
     return { labels: dates.map(shortDate), datasets };
   }
@@ -553,7 +783,7 @@
       data: {
         labels: perSet.labels,
         datasets: perSet.datasets.map((ds, i) => ({
-          label: ds.label, data: ds.data, backgroundColor: SET_COLORS[i % SET_COLORS.length], borderRadius: 3
+          label: ds.label, data: ds.data, backgroundColor: SET_COLORS[(ds.idx != null ? ds.idx : i) % SET_COLORS.length] + (ds.side === 'r' ? '99' : ''), borderRadius: 3
         }))
       },
       options: {
@@ -579,6 +809,7 @@
       if (isDistance) {
         const pace = paceForEntry(e);
         chips = [
+          e.variation ? `<span class="set-chip">${escapeHtml(e.variation)}</span>` : '',
           e.distance != null ? `<span class="set-chip">${round2(kmToDisplay(e.distance))} ${distanceUnitLabel()}</span>` : '',
           pace ? `<span class="set-chip">${pace} /${distanceUnitLabel()}</span>` : '',
           e.timeMinutes != null ? `<span class="set-chip">${formatDuration(e.timeMinutes)}</span>` : '',
@@ -587,10 +818,10 @@
         ].join('') || '<span class="set-chip">No distance data logged</span>';
       } else {
         chips = (e.sets || []).map((s, idx) => {
-          const kg = (s.kg != null && s.kg !== '' && Number(s.kg) !== 0) ? ' @' + (Number(s.kg) > 0 ? '+' : '') + s.kg + weightUnitLabel() : '';
+          const kg = (s.kg != null && s.kg !== '' && Number(s.kg) !== 0) ? ' @' + (Number(s.kg) > 0 ? '+' : 'banded ') + round2(kgToDisplay(Number(s.kg))) + weightUnitLabel() : '';
           const ecc = s.eccentric != null ? ' · ecc ' + s.eccentric + 's' : '';
-          const val = typeof s.reps === 'number' ? s.reps + unit : (s.left || 0) + '/' + (s.right || 0) + unit;
-          return `<span class="set-chip">Set ${idx + 1}: ${escapeHtml(val)}${kg}${ecc}</span>`;
+          const val = typeof s.reps === 'number' ? s.reps + unit : (s.left || 0) + '/' + (s.right || 0) + unit + ((s.left || 0) !== (s.right || 0) ? ' (Δ' + Math.abs((s.left || 0) - (s.right || 0)) + ')' : '');
+          return `<span class="set-chip">Set ${idx + 1}: ${escapeHtml(val)}${kg}${ecc}${escapeHtml((s.variation ? ' · ' + s.variation : '') + (s.equipment ? ' · ' + s.equipment : '') + (s.rpe ? ' · RPE ' + s.rpe : '') + (s.pain ? ' · pain' : '') + (s.formBroke ? ' · form broke' : '') + (s.chain ? ' · chained' : ''))}</span>`;
         }).join('') || '<span class="set-chip">No sets logged</span>';
       }
       row.innerHTML = `
@@ -621,13 +852,13 @@
         if (!kg || isNaN(kg)) return;
         out.hasLoad = true;
         if (!bw) return;
-        const bwU = kgToDisplay(bw.kg); // set weights are in the user's display unit, so compare like with like
+        const bwU = bw.kg; // set weights and bodyweight are both stored in kg
         const pct = kg / bwU * 100;
         const base = { date: e.date, approx: bw.approx };
         if (kg > 0) {
           if (!out.bestAdded || pct > out.bestAdded.pct) out.bestAdded = Object.assign({ kg, pct }, base);
           if (!isometric) {
-            const e1 = est1rmAdded(bwU, kg, setReps(s));
+            const e1 = est1rmAdded(bwU, kg, Shared.cleanReps(s));
             if (e1 != null) {
               const p1 = e1 / bwU * 100;
               if (!out.best1rm || p1 > out.best1rm.pct) out.best1rm = Object.assign({ kg: e1, pct: p1 }, base);
@@ -654,7 +885,7 @@
       note('Log your bodyweight (Manage page → Bodyweight) to see this exercise relative to bodyweight.');
       return;
     }
-    const fmt = (x) => `${x.kg > 0 ? '+' : ''}${round2(x.kg)}${weightUnitLabel()} = ${round2(x.pct)}% BW (${x.date})${x.approx ? ' · est. BW' : ''}`;
+    const fmt = (x) => `${x.kg > 0 ? '+' : ''}${round2(kgToDisplay(x.kg))}${weightUnitLabel()} = ${round2(x.pct)}% BW (${x.date})${x.approx ? ' · est. BW' : ''}`;
     if (rs.bestAdded) addLine('Best added load vs bodyweight', fmt(rs.bestAdded));
     if (rs.best1rm) addLine('Est. 1RM, added load', fmt(rs.best1rm));
     if (rs.bestAssist) addLine('Least assistance', fmt(rs.bestAssist));
@@ -695,7 +926,7 @@
     const bwByDate = {};
     bwWin.forEach(b => { bwByDate[b.date] = round2(kgToDisplay(b.kg)); });
     const dates = Array.from(new Set(sessionDates.concat(bwWin.map(b => b.date)))).sort();
-    const load = dates.map(d => byDate[d] !== undefined ? byDate[d] : null);
+    const load = dates.map(d => byDate[d] !== undefined ? round2(kgToDisplay(byDate[d])) : null);
     const bw = dates.map(d => bwByDate[d] !== undefined ? bwByDate[d] : null);
     const pct = dates.map((d, i) => {
       const ref = bodyweightOn(d);
@@ -732,6 +963,7 @@
   function renderStats() {
     if (!selectedExercise) return;
     const entries = entriesForSelected();
+    renderFormNote(document.getElementById('statFormNote'), entries);
     const isometric = exerciseIsIsometric(selectedExercise, entries);
     const isDistance = isDistanceExercise(selectedExercise);
     const bestsEl = document.getElementById('statBests');
@@ -774,18 +1006,22 @@
       document.getElementById('statSets').textContent = totalSets;
       document.getElementById('statReps').textContent = totalReps;
 
-      let bestSet = null, bestKg = null;
+      let bestSet = null, bestKg = null, bestGap = null;
       entries.forEach(e => (e.sets || []).forEach(s => {
-        const val = typeof s.reps === 'number' ? s.reps : (s.left || 0) + (s.right || 0);
+        const val = Shared.cleanReps(s); // weaker side for one-sided sets; sets where form broke do not count
+        if (s.left !== undefined) { const g = Math.abs((s.left || 0) - (s.right || 0)); if (g > 0 && (!bestGap || g > bestGap.value)) bestGap = { value: g, date: e.date }; }
         if (!bestSet || val > bestSet.value) bestSet = { value: val, date: e.date };
         if (s.kg != null && s.kg > 0 && (!bestKg || s.kg > bestKg.value)) bestKg = { value: s.kg, date: e.date };
       }));
       bestsEl.innerHTML = '';
       addLine(isometric ? 'Longest hold, single set' : 'Most reps, single set', bestSet ? bestSet.value + (isometric ? 's' : '') + ' (' + bestSet.date + ')' : '—');
-      addLine('Heaviest set logged', bestKg ? bestKg.value + 'kg (' + bestKg.date + ')' : '—');
+      if (bestGap) addLine('Biggest left/right gap', bestGap.value + (isometric ? 's' : ' reps') + ' (' + bestGap.date + ')');
+      addLine('Heaviest set logged', bestKg ? round2(kgToDisplay(bestKg.value)) + weightUnitLabel() + ' (' + bestKg.date + ')' : '—');
       renderRelativeStrength(entries, isometric, addLine, bestsEl);
     }
     renderBwChart(entries, isDistance);
+    renderTrendCard(entries, isometric, isDistance);
+    renderRomCard(entries, isometric, isDistance);
 
     const dates = entries.map(e => e.date).sort();
     const historyEl = document.getElementById('statHistory');
@@ -800,6 +1036,13 @@
     addHist('Most recent', dates[dates.length - 1] || '—');
   }
 
+  // sets flagged "form broke" are counted in totals and set charts but never in bests or trends: say so instead of leaving it to guesswork
+  function renderFormNote(el, entries) {
+    if (!el) return;
+    const n = entries.reduce((a, e) => a + (e.sets || []).filter(s => s && s.formBroke).length, 0);
+    el.classList.toggle('hidden', !n);
+    el.textContent = n ? n + (n === 1 ? ' set was' : ' sets were') + ' flagged "form broke": counted in the totals and the set charts, left out of bests and trends.' : '';
+  }
   function renderAll() {
     if (!selectedExercise) return;
     renderVariationFilter();
@@ -817,6 +1060,7 @@
     const range = getPeriodRange();
     document.getElementById('periodLabel').textContent = periodLabelText(range);
     const entries = entriesInRange(range);
+    renderFormNote(document.getElementById('periodFormNote'), entries);
     const isometric = exerciseIsIsometric(selectedExercise, entries);
     const isDistance = isDistanceExercise(selectedExercise);
     const agg = isDistance ? null : aggregate(entries, range);
@@ -846,6 +1090,11 @@
     document.getElementById('repsChartLabel').textContent = isDistance ? 'Time (minutes)' : (isometric ? 'Seconds per set' : 'Reps per set');
 
     renderCharts(agg, perSet, isometric, isDistance, aggDist);
+    if (rangeMode === 'year' && !isDistance && typeof Chart !== 'undefined') {
+      // over a whole year the bars of every set are unreadable: show the best of each session and its 5-session average instead
+      const trend = makeTrendChart(document.getElementById('repsChart').getContext('2d'), entries, isometric);
+      if (trend) { if (repsChartInstance) repsChartInstance.destroy(); repsChartInstance = trend; document.getElementById('repsChartLabel').textContent = 'Best per session'; }
+    }
     renderEntriesList(entries, isometric, isDistance);
   }
 
@@ -864,6 +1113,8 @@
     document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('mainView').classList.remove('hidden');
     renderActivityHeatmap();
+    renderBalance();
+    renderStraightArm();
     renderExerciseNav();
     renderAll();
   }
@@ -874,5 +1125,7 @@
     document.getElementById('emptyState').classList.remove('hidden');
     document.getElementById('mainView').classList.add('hidden');
     document.getElementById('activityHeatmapCard').classList.add('hidden');
+    document.getElementById('balanceCard').classList.add('hidden');
+    document.getElementById('straightCard').classList.add('hidden');
   }
 })();

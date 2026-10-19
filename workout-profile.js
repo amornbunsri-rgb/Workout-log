@@ -13,7 +13,7 @@
   try { Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY)) || {}); } catch (e) { /* first run */ }
   function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
   function toast(m) { App.showToast(m); }
-  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function todayISO() { return window.WorkoutShared.todayISO(); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   // ---------------- IndexedDB ----------------
@@ -81,7 +81,7 @@
         '<div class="ms-form">' +
           '<input type="date" id="msDate" aria-label="Date" />' +
           '<select id="msType" aria-label="Measurement"></select>' +
-          '<input type="number" step="0.1" min="0" id="msValue" aria-label="Value" />' +
+          '<input type="number" step="0.1" id="msValue" aria-label="Value" />' +
           '<button type="button" id="msAdd">Add</button>' +
         '</div>' +
         '<details class="profile-help" id="msHistoryWrap"><summary>History</summary><div id="msHistory" class="scroll-list" style="max-height:240px; margin-top:6px;"></div></details>' +
@@ -124,6 +124,7 @@
           '<li>Paste the client ID above. It only works from an http(s) address, not from a file opened directly from disk.</li></ol>' +
           '<p>Sync merges both ways. Workouts deleted on one device can come back on the next merge-sync; use <b>Overwrite Drive</b> to make Drive match this device.</p></details>' +
       '</div>' +
+      '<div class="module"><div class="section-label-row"><div class="section-label">Reset</div></div><div id="pfResetSlot"></div></div>' +
     '</div>' +
     '<input type="file" id="pfAvatarFile" accept="image/*" class="hidden" />' +
     '<input type="file" id="pfCameraFile" accept="image/*" capture="environment" class="hidden" />' +
@@ -299,11 +300,13 @@
   };
 
   // ---------------- bodyweight: adopt the existing module so its ids and handlers keep working ----------------
+  // the Reset section moved here from the settings menu (the main script already wired its buttons by id)
+  var resetBtn = document.getElementById('resetToggleBtn');
+  if (resetBtn && resetBtn.closest('.collapsible')) $('pfResetSlot').appendChild(resetBtn.closest('.collapsible'));
+
   var bwModule = document.getElementById('module-config-bodyweight');
   if (bwModule) {
     $('pfBodyweightSlot').appendChild(bwModule);
-    var bwCollapse = document.getElementById('bodyweightCollapseBtn');
-    if (bwCollapse) bwCollapse.classList.add('hidden');
   }
 
 
@@ -318,10 +321,11 @@
   function lenUnit() { return imperial() ? 'in' : 'cm'; }
   function mTypes() { var l = window.WorkoutLibrary && window.WorkoutLibrary.get(); return l ? l.measurementTypes : []; }
   function mType(id) { return mTypes().filter(function (t) { return t.id === id; })[0]; }
-  function unitOf(t) { return t && t.unit === 'percent' ? '%' : lenUnit(); }
-  function toShown(t, v) { var x = (t && t.unit === 'percent') ? v : (imperial() ? v / CM_PER_IN : v); return Math.round(x * 10) / 10; }
-  function fromShown(t, v) { return (t && t.unit === 'percent') ? v : (imperial() ? v * CM_PER_IN : v); }
-  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function unitOf(t) { return t && t.unit === 'percent' ? '%' : (t && t.unit === 'degrees' ? '°' : lenUnit()); }
+  function noConv(t) { return !!t && (t.unit === 'percent' || t.unit === 'degrees'); }
+  function toShown(t, v) { var x = noConv(t) ? v : (imperial() ? v / CM_PER_IN : v); return Math.round(x * 10) / 10; }
+  function fromShown(t, v) { return noConv(t) ? v : (imperial() ? v * CM_PER_IN : v); }
+  function esc(x) { return window.WorkoutShared.escapeHtml(x); }
 
   function renderMeasurements() {
     var types = mTypes(), sel = $('msType'), keep = sel.value;
@@ -367,7 +371,7 @@
   $('msAdd').onclick = function () {
     var t = mType($('msType').value), v = parseFloat($('msValue').value), date = $('msDate').value || todayISO();
     if (!t) { toast('Choose a measurement first'); return; }
-    if (!(v > 0)) { toast('Enter a value above 0'); return; }
+    if (!(t.signed ? isFinite(v) : v > 0)) { toast(t.signed ? 'Enter a number' : 'Enter a value above 0'); return; }
     var stored = Math.round(fromShown(t, v) * 100) / 100;
     var existing = measurements.filter(function (m) { return m.type === t.id && m.date === date; })[0];
     if (existing) existing.value = stored; else measurements.push({ id: uid(), type: t.id, date: date, value: stored });

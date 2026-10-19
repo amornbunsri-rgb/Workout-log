@@ -18,9 +18,9 @@
   var state = { enabled: true, last: '', lastAt: 0, folder: '' };
   try { Object.assign(state, JSON.parse(localStorage.getItem(LS_KEY)) || {}); } catch (e) { /* first run */ }
   function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
-  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function todayISO() { return window.WorkoutShared.todayISO(); }
   function toast(m) { App.showToast(m); }
-  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function esc(x) { return window.WorkoutShared.escapeHtml(x); }
 
   // ---------------- remembering the folder (a handle can't go in localStorage, so IndexedDB) ----------------
   var store = {
@@ -93,6 +93,7 @@
         if (isEmpty(payload)) {
           if (opts.manual) toast('Nothing to back up yet'); return false;
         }
+        payload = Object.assign({ backupKind: opts.manual ? 'manual' : 'auto' }, payload); // kind goes first so it can be read cheaply
         payload.exportedAt = new Date().toISOString();
         var day = opts.date || todayISO();
         return resolveDir(root).then(function (dir) {
@@ -152,6 +153,7 @@
     '<details class="profile-help"><summary>Good to know</summary><ul>' +
       '<li>Make a folder called <b>backup</b> anywhere you like and choose it. If you choose a different folder, the app makes a <b>backup</b> folder inside it.</li>' +
       '<li>One file a day, named <code>workout-backup-YYYY-MM-DD.json</code>. After each backup, only the newest 5 are kept. Other files in that folder are never touched.</li>' +
+      '<li>Each file is tagged <b>Auto</b> (made by the daily backup) or <b>Manual</b> (you pressed Back up now). There is one file per day, so a manual backup replaces that day\'s auto one. Files made before this tag existed show <b>Untagged</b>.</li>' +
       '<li>Backups run when you open the app (and about every 30 minutes while it stays open). If the browser asks for folder access after a restart, tap Allow.</li>' +
       '<li>To restore, use Restore beside a file below, or Import backup in the settings menu. Restoring merges: it adds what is missing and does not overwrite.</li>' +
       '<li>Photos and your profile picture are not in these files. Google Drive sync covers those.</li>' +
@@ -185,14 +187,21 @@
       if (!root) { box.innerHTML = ''; return; }
       return permission(root, false).then(function (ok) {
         if (!ok) { box.innerHTML = ''; return; }
-        return resolveDir(root).then(listBackups).then(function (names) {
+        return resolveDir(root).then(function (dir) { return listBackups(dir).then(function (names) { return { dir: dir, names: names }; }); }).then(function (res) {
+          var names = res.names, dir = res.dir;
           if (token !== listToken) return;
           box.innerHTML = names.length ? '' : '';
           names.forEach(function (n) {
             var row = document.createElement('div'); row.className = 'bk-row';
-            row.innerHTML = '<span>' + esc(n.replace(PREFIX, '').replace('.json', '')) + '</span><button type="button" class="text-btn">Restore</button>';
+            row.innerHTML = '<span>' + esc(n.replace(PREFIX, '').replace('.json', '')) + ' <span class="bk-tag">…</span></span><button type="button" class="text-btn">Restore</button>';
             row.querySelector('button').onclick = function () { restore(root, n); };
             box.appendChild(row);
+            // the kind is stored at the very start of the file, so only the first bytes are read
+            dir.getFileHandle(n).then(function (fh) { return fh.getFile(); }).then(function (f) { return f.slice(0, 160).text(); }).then(function (t) {
+              var m = /"backupKind"\s*:\s*"(auto|manual)"/.exec(t), kind = m ? m[1] : 'older', tag = row.querySelector('.bk-tag');
+              tag.textContent = kind === 'auto' ? 'Auto' : kind === 'manual' ? 'Manual' : 'Untagged';
+              tag.className = 'bk-tag ' + kind;
+            })['catch'](function () { var tag = row.querySelector('.bk-tag'); if (tag) tag.textContent = ''; });
           });
         });
       });
@@ -217,7 +226,7 @@
   };
   $('bkNow').onclick = function () { backupNow({ ask: true, manual: true }); };
   $('bkDownload').onclick = function () {
-    var payload = App.buildBackupPayload(); payload.exportedAt = new Date().toISOString();
+    var payload = Object.assign({ backupKind: 'manual' }, App.buildBackupPayload()); payload.exportedAt = new Date().toISOString();
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     a.download = PREFIX + todayISO() + '.json';

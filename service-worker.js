@@ -6,19 +6,18 @@
    - Everything else (Google sign-in, Drive) goes straight to the network and is never touched.
    There is no version number to bump when you edit your files. Only edit APP_FILES if you add or rename one. */
 const APP_CACHE = 'workout-app-v1';
-const CDN_CACHE = 'workout-cdn-v1';
+const CDN_CACHE = 'workout-cdn-v2'; // v2: only Font Awesome 6.5.1 is kept now
 const NETWORK_TIMEOUT_MS = 4000;
 
 const APP_FILES = [
   './', 'index.html', 'workout-log-standalone.html', 'workout-graph.html', 'workout-log-style.css',
-  'workout-shared.js', 'workout-log.js', 'workout-graph.js', 'workout-tools.js', 'workout-library.js',
-  'workout-library.json', 'workout-profile.js', 'workout-backup.js', 'workout-variations.js', 'workout-pwa.js', 'manifest.webmanifest',
+  'workout-shared.js', 'workout-log.js', 'workout-graph.js', 'workout-tools.js', 'workout-extras.js', 'workout-library.js',
+  'workout-library.json', 'workout-routines.js', 'workout-profile.js', 'workout-backup.js', 'workout-variations.js', 'workout-pwa.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-64.png'
 ];
 const CDN_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'
 ];
 const CDN_HOST = 'cdnjs.cloudflare.com';

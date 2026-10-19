@@ -2,6 +2,16 @@
    Does nothing on browsers or addresses where service workers are not allowed (for example a file opened from disk). */
 (function () {
   'use strict';
+  // links between the app's own pages open in this same window, never a new tab or window
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.hasAttribute('download') || (a.target && a.target !== '_self') || location.protocol === 'file:') return;
+    var u; try { u = new URL(a.href, location.href); } catch (err) { return; }
+    if (u.origin !== location.origin) return;
+    e.preventDefault();
+    location.assign(u.href);
+  });
   // top bar colour follows the app's own light / dark switch
   var meta = document.querySelector('meta[name="theme-color"]:not([media])');
   if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }

@@ -1,6 +1,6 @@
 {
  "version": 1,
- "updated": "2026-09-30",
+ "updated": "2026-10-19",
  "meta": {
   "levels": [
    {
@@ -2138,31 +2138,41 @@
      "name": "Frog stand",
      "metric": "hold",
      "target": 20,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Planche",
+     "variation": "Frog stand"
     },
     {
      "name": "Tuck planche",
      "metric": "hold",
      "target": 15,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Planche",
+     "variation": "Tuck"
     },
     {
      "name": "Advanced tuck planche",
      "metric": "hold",
      "target": 15,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Planche",
+     "variation": "Advanced tuck"
     },
     {
      "name": "Straddle planche",
      "metric": "hold",
      "target": 10,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Planche",
+     "variation": "Straddle"
     },
     {
      "name": "Full planche",
      "metric": "hold",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Planche",
+     "variation": "Full"
     }
    ]
   },
@@ -2173,25 +2183,33 @@
      "name": "Tuck front lever",
      "metric": "hold",
      "target": 20,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Front lever",
+     "variation": "Tuck"
     },
     {
      "name": "Advanced tuck front lever",
      "metric": "hold",
      "target": 15,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Front lever",
+     "variation": "Advanced tuck"
     },
     {
      "name": "Straddle front lever",
      "metric": "hold",
      "target": 10,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Front lever",
+     "variation": "Straddle"
     },
     {
      "name": "Full front lever",
      "metric": "hold",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Front lever",
+     "variation": "Full"
     }
    ]
   },
@@ -2202,19 +2220,24 @@
      "name": "Wall-assisted handstand",
      "metric": "hold",
      "target": 30,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Handstand",
+     "variation": "Wall-assisted"
     },
     {
      "name": "Freestanding handstand",
      "metric": "hold",
      "target": 10,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Handstand",
+     "variation": "Freestanding"
     },
     {
      "name": "Handstand press",
      "metric": "reps",
      "target": 3,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Handstand press attempts"
     }
    ]
   },
@@ -2225,25 +2248,32 @@
      "name": "Dead hang",
      "metric": "hold",
      "target": 30,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Dead hang"
     },
     {
      "name": "Negative pull-up",
      "metric": "reps",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Pull-ups",
+     "variation": "Negative"
     },
     {
      "name": "Pull-up",
      "metric": "reps",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Pull-ups",
+     "variation": "__none__"
     },
     {
      "name": "Chest-to-bar pull-up",
      "metric": "reps",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Pull-ups",
+     "variation": "Chest-to-bar"
     }
    ]
   },
@@ -2254,25 +2284,32 @@
      "name": "Explosive pull-up",
      "metric": "reps",
      "target": 5,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Pull-ups",
+     "variation": "Explosive"
     },
     {
      "name": "Straight bar dip",
      "metric": "reps",
      "target": 10,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Dips"
     },
     {
      "name": "Low-bar muscle-up negative",
      "metric": "reps",
      "target": 3,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Muscle-up",
+     "variation": "Negative"
     },
     {
      "name": "Muscle-up",
      "metric": "reps",
      "target": 1,
-     "sets": 3
+     "sets": 3,
+     "exercise": "Muscle-up",
+     "variation": "__none__"
     }
    ]
   },
@@ -2283,19 +2320,25 @@
      "name": "Tuck support hold",
      "metric": "hold",
      "target": 20,
-     "sets": 3
+     "sets": 3,
+     "exercise": "L-sit",
+     "variation": "Tuck"
     },
     {
      "name": "One-leg L-sit",
      "metric": "hold",
      "target": 15,
-     "sets": 3
+     "sets": 3,
+     "exercise": "L-sit",
+     "variation": "One-leg"
     },
     {
      "name": "Full L-sit",
      "metric": "hold",
      "target": 15,
-     "sets": 3
+     "sets": 3,
+     "exercise": "L-sit",
+     "variation": "Full"
     }
    ]
   }
@@ -2541,6 +2584,67 @@
    "id": "bodyfat",
    "name": "Body fat",
    "unit": "percent"
+  },
+  {
+   "id": "rom-toes",
+   "name": "Fingertips to floor",
+   "unit": "length",
+   "signed": true,
+   "group": "Range of motion",
+   "note": "Negative if your fingers go past the floor",
+   "exercises": [
+    "Hamstring wall stretch",
+    "Pancake lean",
+    "Straddle stretch",
+    "L-sit"
+   ]
+  },
+  {
+   "id": "rom-pancake",
+   "name": "Pancake: chest to floor",
+   "unit": "length",
+   "group": "Range of motion",
+   "exercises": [
+    "Pancake lean",
+    "Straddle stretch"
+   ]
+  },
+  {
+   "id": "rom-shoulder",
+   "name": "Shoulder flexion (arms overhead)",
+   "unit": "degrees",
+   "group": "Range of motion",
+   "exercises": [
+    "Wall slides",
+    "Wall angels",
+    "Shoulder flexion stretch (wall)",
+    "Handstand",
+    "Chest-to-wall handstand"
+   ]
+  },
+  {
+   "id": "rom-hs-line",
+   "name": "Handstand line (degrees off vertical)",
+   "unit": "degrees",
+   "group": "Range of motion",
+   "note": "0 = a straight line",
+   "exercises": [
+    "Handstand",
+    "Chest-to-wall handstand",
+    "Wall handstand",
+    "Freestanding handstand"
+   ]
+  },
+  {
+   "id": "rom-ankle",
+   "name": "Ankle: knee to wall",
+   "unit": "length",
+   "group": "Range of motion",
+   "exercises": [
+    "Deep squat hold",
+    "Bodyweight squats",
+    "Pistol squats"
+   ]
   }
  ],
  "warmups": [
@@ -2802,22 +2906,18 @@
  ],
  "exercises": [
   {
-   "name": "Assisted Nordic curls",
-   "category": "Legs",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
    "name": "Bird dog",
-   "category": "Legs",
+   "category": "Core",
    "isometric": false,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "core"
   },
   {
    "name": "Bodyweight squats",
    "category": "Legs",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "legs"
   },
   {
    "name": "Bulgarian split squats",
@@ -2826,100 +2926,102 @@
    "unilateral": true,
    "aliases": [
     "Weighted Bulgarian split squats"
-   ]
+   ],
+   "pattern": "legs"
   },
   {
    "name": "Burpees",
    "category": "Legs",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "legs"
   },
   {
    "name": "Calf stretch",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Couch stretch",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Dead bug",
-   "category": "Legs",
+   "category": "Core",
    "isometric": false,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "core"
   },
   {
    "name": "Deep squat hold",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Glute bridges",
    "category": "Legs",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Glute bridges (single leg)",
-   "category": "Legs",
-   "isometric": false,
-   "unilateral": true
+   "unilateral": false,
+   "pattern": "legs"
   },
   {
    "name": "Hamstring wall stretch",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": true,
    "unilateral": true,
    "aliases": [
     "Wall hamstring stretch"
-   ]
+   ],
+   "pattern": "mobility"
   },
   {
    "name": "Hollow hold",
-   "category": "Legs",
+   "category": "Core",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "core"
   },
   {
    "name": "Hollow-to-arch rocks",
-   "category": "Legs",
+   "category": "Core",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Jump squats",
-   "category": "Legs",
-   "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "core"
   },
   {
    "name": "Jumping jacks",
    "category": "Legs",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "legs"
   },
   {
    "name": "Leg swings",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Mountain climbers",
-   "category": "Legs",
+   "category": "Core",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "core"
   },
   {
    "name": "Pigeon stretch",
-   "category": "Legs",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Pistol squats",
@@ -2929,152 +3031,74 @@
    "aliases": [
     "Pistol squat progression",
     "Weighted pistol squats"
-   ]
+   ],
+   "pattern": "legs"
   },
   {
    "name": "Plank",
-   "category": "Legs",
+   "category": "Core",
    "isometric": true,
    "unilateral": false,
    "aliases": [
     "Plank (weighted)"
-   ]
-  },
-  {
-   "name": "Reverse lunges",
-   "category": "Legs",
-   "isometric": false,
-   "unilateral": true
+   ],
+   "pattern": "core"
   },
   {
    "name": "Single-leg calf raises",
    "category": "Legs",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "legs"
   },
   {
    "name": "Step-ups",
    "category": "Legs",
    "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Walking lunges",
-   "category": "Legs",
-   "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Archer pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Band-assisted one-arm pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Chest-to-bar pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Chin-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false,
-   "aliases": [
-    "Weighted chin-ups"
-   ]
+   "unilateral": true,
+   "pattern": "legs"
   },
   {
    "name": "Dead hang",
    "category": "Pull",
    "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Explosive pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Feet-elevated inverted rows",
-   "category": "Pull",
-   "isometric": false,
    "unilateral": false,
-   "aliases": [
-    "Feet-elevated rows (weighted)",
-    "Inverted rows (feet elevated)"
-   ]
-  },
-  {
-   "name": "Flexed-arm hang",
-   "category": "Pull",
-   "isometric": true,
-   "unilateral": false,
-   "aliases": [
-    "Flexed-arm hang (chin over bar)"
-   ]
-  },
-  {
-   "name": "Hanging knee raises",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
+   "pattern": "vpull"
   },
   {
    "name": "Hanging leg raises",
-   "category": "Pull",
+   "category": "Core",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "core"
   },
   {
    "name": "Ice cream makers",
    "category": "Pull",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpull"
   },
   {
    "name": "Inverted rows",
    "category": "Pull",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpull"
   },
   {
    "name": "Muscle-up",
    "category": "Pull",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Negative pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "One-arm dead hang",
-   "category": "Pull",
-   "isometric": true,
-   "unilateral": true
+   "unilateral": false,
+   "pattern": "vpull"
   },
   {
    "name": "One-arm pull-up",
    "category": "Pull",
    "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "One-arm pull-up negatives",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "vpull"
   },
   {
    "name": "Pull-ups",
@@ -3085,37 +3109,15 @@
     "Band-assisted pull-ups",
     "Pull-ups (easy)",
     "Weighted pull-ups"
-   ]
-  },
-  {
-   "name": "Scapular pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Scapular retraction hangs",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": false
+   ],
+   "pattern": "vpull"
   },
   {
    "name": "Tuck front lever rows",
    "category": "Pull",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Typewriter pull-ups",
-   "category": "Pull",
-   "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Diamond push-ups",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpull"
   },
   {
    "name": "Dips",
@@ -3127,55 +3129,22 @@
     "Dips (easy)",
     "Straight bar dips",
     "Weighted dips"
-   ]
-  },
-  {
-   "name": "Elevated pike push-ups",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false,
-   "aliases": [
-    "Pike push-ups (elevated)"
-   ]
-  },
-  {
-   "name": "Incline push-ups",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Partial-range wall HSPU",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
+   ],
+   "pattern": "vpush"
   },
   {
    "name": "Pike push-ups",
    "category": "Push",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Planche push-ups",
-   "category": "Push",
-   "isometric": false,
    "unilateral": false,
-   "aliases": [
-    "Planche push-ups (progression)"
-   ]
+   "pattern": "vpush"
   },
   {
    "name": "Plank shoulder taps",
    "category": "Push",
    "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Pseudo planche push-ups",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
+   "unilateral": true,
+   "pattern": "core"
   },
   {
    "name": "Push-ups",
@@ -3184,286 +3153,229 @@
    "unilateral": false,
    "aliases": [
     "Weighted push-ups"
-   ]
-  },
-  {
-   "name": "Scapular push-ups",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Wall HSPU",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false,
-   "aliases": [
-    "Wall HSPU (full range)"
-   ]
-  },
-  {
-   "name": "Wall HSPU negatives",
-   "category": "Push",
-   "isometric": false,
-   "unilateral": false
+   ],
+   "pattern": "hpush"
   },
   {
    "name": "90/90 hip switches",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Advanced tuck front lever",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Advanced tuck planche",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Advanced tuck to straddle front lever",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Arm circles",
-   "category": "Skill",
-   "isometric": false,
-   "unilateral": false
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Back lever",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpull"
   },
   {
    "name": "Cat-cow",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Chest-to-wall handstand",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Chest-to-wall plank hold",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpush"
   },
   {
    "name": "Child's pose",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Doorway chest stretch",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Dragon flag",
-   "category": "Skill",
+   "category": "Core",
    "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Dragon flag negatives",
-   "category": "Skill",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "False grip hangs",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Freestanding handstand",
-   "category": "Skill",
-   "isometric": true,
    "unilateral": false,
-   "aliases": [
-    "Freestanding handstand practice"
-   ]
+   "pattern": "core"
   },
   {
    "name": "Front lever",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpull"
   },
   {
    "name": "Handstand press attempts",
    "category": "Skill",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpush"
   },
   {
    "name": "Handstand shrugs",
    "category": "Skill",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpush"
   },
   {
    "name": "Human flag",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpull"
   },
   {
    "name": "L-sit",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "core"
   },
   {
    "name": "Lat stretch",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
-  },
-  {
-   "name": "Low-bar muscle-up negatives",
-   "category": "Skill",
-   "isometric": false,
-   "unilateral": false
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Overhead triceps stretch",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Pancake lean",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Parallette support hold",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Planche leans",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpush"
   },
   {
    "name": "Shoulder circles (CARs)",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Shoulder flexion stretch (wall)",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Straddle front lever",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Straddle planche progression",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Straddle stretch",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Thoracic extension over a roller",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Thoracic rotations",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": true
-  },
-  {
-   "name": "Tuck front lever",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Tuck planche",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false
-  },
-  {
-   "name": "Wall angels",
-   "category": "Skill",
-   "isometric": false,
-   "unilateral": false
-  },
-  {
-   "name": "Wall handstand",
-   "category": "Skill",
-   "isometric": true,
-   "unilateral": false,
-   "aliases": [
-    "Wall handstand hold"
-   ]
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
    "name": "Wall slides",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": false,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Wrist conditioning",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "mobility"
   },
   {
    "name": "Wrist flexor stretch",
-   "category": "Skill",
+   "category": "Mobility",
    "isometric": true,
-   "unilateral": true
+   "unilateral": true,
+   "pattern": "mobility"
   },
   {
-   "name": "Wrist rocks",
+   "name": "Planche",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "hpush"
   },
   {
-   "name": "Wrist warm-up",
+   "name": "Handstand",
    "category": "Skill",
    "isometric": true,
-   "unilateral": false
+   "unilateral": false,
+   "pattern": "vpush"
+  },
+  {
+   "name": "Handstand push-ups",
+   "category": "Push",
+   "isometric": false,
+   "unilateral": false,
+   "pattern": "vpush"
+  },
+  {
+   "name": "Lunges",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": true,
+   "pattern": "legs"
+  },
+  {
+   "name": "Nordic curls",
+   "category": "Legs",
+   "isometric": false,
+   "unilateral": false,
+   "pattern": "legs"
+  },
+  {
+   "name": "Run",
+   "category": "Run",
+   "isometric": false,
+   "unilateral": false,
+   "pattern": "legs"
+  },
+  {
+   "name": "Supine planche",
+   "category": "Skill",
+   "isometric": false,
+   "unilateral": false,
+   "aliases": [
+    "Supline Planche",
+    "Supine Barbell Planche"
+   ],
+   "pattern": "hpush"
   }
  ],
  "variations": [
@@ -3471,7 +3383,8 @@
    "exercise": "Pull-ups",
    "measure": "reps",
    "variations": [
-    "Banded",
+    "Scapular",
+    "Scapular retraction",
     "Jumping",
     "Negative",
     "Wide",
@@ -3488,6 +3401,10 @@
     "Soviet",
     "Archer",
     "Typewriter"
+   ],
+   "oneSided": [
+    "Archer",
+    "Typewriter"
    ]
   },
   {
@@ -3497,6 +3414,11 @@
     "Active",
     "Towel",
     "False grip",
+    "Flexed-arm",
+    "Feet-assisted one-arm",
+    "One-arm"
+   ],
+   "oneSided": [
     "Feet-assisted one-arm",
     "One-arm"
    ]
@@ -3505,10 +3427,9 @@
    "exercise": "One-arm pull-up",
    "measure": "reps",
    "variations": [
-    "Band-assisted",
     "Towel-assisted",
-    "Negative",
-    "Archer-assisted"
+    "Archer-assisted",
+    "Negative"
    ]
   },
   {
@@ -3535,6 +3456,10 @@
     "Wide",
     "Close",
     "Underhand"
+   ],
+   "oneSided": [
+    "Archer",
+    "One-arm"
    ]
   },
   {
@@ -3546,8 +3471,7 @@
     "One-leg",
     "Straddle",
     "Half-lay",
-    "Full",
-    "Banded"
+    "Full"
    ]
   },
   {
@@ -3559,8 +3483,7 @@
     "One-leg",
     "Straddle",
     "Half-lay",
-    "Full",
-    "Banded"
+    "Full"
    ]
   },
   {
@@ -3585,6 +3508,185 @@
     "Toes-to-bar",
     "Windshield wipers"
    ]
+  },
+  {
+   "exercise": "Planche",
+   "measure": "hold",
+   "variations": [
+    "Lean",
+    "Frog stand",
+    "Tuck",
+    "Advanced tuck",
+    "One-leg",
+    "Straddle",
+    "Half-lay",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Handstand",
+   "measure": "hold",
+   "variations": [
+    "Chest-to-wall",
+    "Wall-assisted",
+    "Freestanding"
+   ]
+  },
+  {
+   "exercise": "L-sit",
+   "measure": "hold",
+   "variations": [
+    "Tuck",
+    "One-leg",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Push-ups",
+   "measure": "reps",
+   "variations": [
+    "Scapular",
+    "Incline",
+    "Wide",
+    "Close",
+    "Diamond",
+    "Decline",
+    "Archer",
+    "Explosive",
+    "Pseudo planche",
+    "Planche",
+    "One-arm"
+   ],
+   "oneSided": [
+    "Archer",
+    "One-arm"
+   ]
+  },
+  {
+   "exercise": "Pike push-ups",
+   "measure": "reps",
+   "variations": [
+    "Elevated",
+    "Deficit"
+   ]
+  },
+  {
+   "exercise": "Handstand push-ups",
+   "measure": "reps",
+   "variations": [
+    "Wall negative",
+    "Wall partial",
+    "Wall",
+    "Deficit",
+    "Freestanding"
+   ]
+  },
+  {
+   "exercise": "Dips",
+   "measure": "reps",
+   "variations": [
+    "Bench",
+    "Straight bar",
+    "Negative"
+   ]
+  },
+  {
+   "exercise": "Pistol squats",
+   "measure": "reps",
+   "variations": [
+    "Assisted",
+    "Box",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Bodyweight squats",
+   "measure": "reps",
+   "variations": [
+    "Paused",
+    "Tempo",
+    "Jump"
+   ]
+  },
+  {
+   "exercise": "Glute bridges",
+   "measure": "reps",
+   "variations": [
+    "Single-leg",
+    "Elevated"
+   ],
+   "oneSided": [
+    "Single-leg"
+   ]
+  },
+  {
+   "exercise": "Nordic curls",
+   "measure": "reps",
+   "variations": [
+    "Assisted",
+    "Reverse (quads)",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Dragon flag",
+   "measure": "reps",
+   "variations": [
+    "Tuck",
+    "Negative",
+    "Full"
+   ]
+  },
+  {
+   "exercise": "Wall slides",
+   "measure": "reps",
+   "variations": [
+    "Angels"
+   ]
+  },
+  {
+   "exercise": "Shoulder circles (CARs)",
+   "measure": "reps",
+   "variations": [
+    "Arm circles"
+   ]
+  },
+  {
+   "exercise": "Wrist conditioning",
+   "measure": "hold",
+   "variations": [
+    "Rocks",
+    "Warm-up"
+   ]
+  },
+  {
+   "exercise": "Lunges",
+   "measure": "reps",
+   "variations": [
+    "Forward",
+    "Reverse",
+    "Walking",
+    "Lateral",
+    "Curtsy"
+   ]
+  },
+  {
+   "exercise": "Run",
+   "measure": "distance",
+   "variations": [
+    "Free run",
+    "5K",
+    "Sprint",
+    "Trail"
+   ]
+  },
+  {
+   "exercise": "Supine planche",
+   "measure": "reps",
+   "variations": [
+    "Bodyweight",
+    "Barbell"
+   ]
   }
  ],
  "variationAliases": [
@@ -3600,6 +3702,12 @@
    "name": "Wide",
    "exercise": "Pull-ups",
    "variation": "Wide"
+  },
+  {
+   "name": "Wide",
+   "exercise": "Push-ups",
+   "variation": "Wide",
+   "category": "Push"
   },
   {
    "name": "Wide pull-ups",
@@ -3638,13 +3746,11 @@
   },
   {
    "name": "Band-assisted pull-ups",
-   "exercise": "Pull-ups",
-   "variation": "Banded"
+   "exercise": "Pull-ups"
   },
   {
    "name": "Banded pull-ups",
-   "exercise": "Pull-ups",
-   "variation": "Banded"
+   "exercise": "Pull-ups"
   },
   {
    "name": "Chest-to-bar pull-ups",
@@ -3697,14 +3803,6 @@
    "variation": "Typewriter"
   },
   {
-   "name": "Scap",
-   "exercise": "Scapular pull-ups"
-  },
-  {
-   "name": "Scapular pull-up",
-   "exercise": "Scapular pull-ups"
-  },
-  {
    "name": "Muscle up",
    "exercise": "Muscle-up"
   },
@@ -3753,8 +3851,7 @@
   },
   {
    "name": "Front lever band",
-   "exercise": "Front lever",
-   "variation": "Banded"
+   "exercise": "Front lever"
   },
   {
    "name": "Tucked lever",
@@ -3815,6 +3912,382 @@
    "name": "Hanging knee raises",
    "exercise": "Hanging leg raises",
    "variation": "Knee raise"
+  },
+  {
+   "name": "Frog stand",
+   "exercise": "Planche",
+   "variation": "Frog stand"
+  },
+  {
+   "name": "Tuck planche",
+   "exercise": "Planche",
+   "variation": "Tuck"
+  },
+  {
+   "name": "Advanced tuck planche",
+   "exercise": "Planche",
+   "variation": "Advanced tuck"
+  },
+  {
+   "name": "One-leg planche",
+   "exercise": "Planche",
+   "variation": "One-leg"
+  },
+  {
+   "name": "Straddle planche",
+   "exercise": "Planche",
+   "variation": "Straddle"
+  },
+  {
+   "name": "Straddle planche progression",
+   "exercise": "Planche",
+   "variation": "Straddle"
+  },
+  {
+   "name": "Full planche",
+   "exercise": "Planche",
+   "variation": "Full"
+  },
+  {
+   "name": "Chest-to-wall handstand",
+   "exercise": "Handstand",
+   "variation": "Chest-to-wall"
+  },
+  {
+   "name": "Wall handstand",
+   "exercise": "Handstand",
+   "variation": "Wall-assisted"
+  },
+  {
+   "name": "Wall handstand hold",
+   "exercise": "Handstand",
+   "variation": "Wall-assisted"
+  },
+  {
+   "name": "Wall-assisted handstand",
+   "exercise": "Handstand",
+   "variation": "Wall-assisted"
+  },
+  {
+   "name": "Freestanding handstand",
+   "exercise": "Handstand",
+   "variation": "Freestanding"
+  },
+  {
+   "name": "Freestanding handstand practice",
+   "exercise": "Handstand",
+   "variation": "Freestanding"
+  },
+  {
+   "name": "Tuck support hold",
+   "exercise": "L-sit",
+   "variation": "Tuck"
+  },
+  {
+   "name": "One-leg L-sit",
+   "exercise": "L-sit",
+   "variation": "One-leg"
+  },
+  {
+   "name": "Full L-sit",
+   "exercise": "L-sit",
+   "variation": "Full"
+  },
+  {
+   "name": "Diamond push-ups",
+   "exercise": "Push-ups",
+   "variation": "Diamond"
+  },
+  {
+   "name": "Incline push-ups",
+   "exercise": "Push-ups",
+   "variation": "Incline"
+  },
+  {
+   "name": "Scapular push-ups",
+   "exercise": "Push-ups",
+   "variation": "Scapular"
+  },
+  {
+   "name": "Pseudo planche push-ups",
+   "exercise": "Push-ups",
+   "variation": "Pseudo planche"
+  },
+  {
+   "name": "Planche push-ups",
+   "exercise": "Push-ups",
+   "variation": "Planche"
+  },
+  {
+   "name": "Planche push-ups (progression)",
+   "exercise": "Push-ups",
+   "variation": "Planche"
+  },
+  {
+   "name": "OAP",
+   "exercise": "Push-ups",
+   "variation": "One-arm"
+  },
+  {
+   "name": "Elevated pike push-ups",
+   "exercise": "Pike push-ups",
+   "variation": "Elevated"
+  },
+  {
+   "name": "Pike push-ups (elevated)",
+   "exercise": "Pike push-ups",
+   "variation": "Elevated"
+  },
+  {
+   "name": "Pike raised",
+   "exercise": "Pike push-ups",
+   "variation": "Elevated"
+  },
+  {
+   "name": "Pike Def",
+   "exercise": "Pike push-ups",
+   "variation": "Deficit"
+  },
+  {
+   "name": "Wall HSPU",
+   "exercise": "Handstand push-ups",
+   "variation": "Wall"
+  },
+  {
+   "name": "Wall HSPU (full range)",
+   "exercise": "Handstand push-ups",
+   "variation": "Wall"
+  },
+  {
+   "name": "HSPU",
+   "exercise": "Handstand push-ups",
+   "variation": "Wall"
+  },
+  {
+   "name": "Partial-range wall HSPU",
+   "exercise": "Handstand push-ups",
+   "variation": "Wall partial"
+  },
+  {
+   "name": "Wall HSPU negatives",
+   "exercise": "Handstand push-ups",
+   "variation": "Wall negative"
+  },
+  {
+   "name": "Tricep dips",
+   "exercise": "Dips",
+   "variation": "Bench"
+  },
+  {
+   "name": "Bar dips",
+   "exercise": "Dips",
+   "variation": "Straight bar"
+  },
+  {
+   "name": "Straight bar dips",
+   "exercise": "Dips",
+   "variation": "Straight bar"
+  },
+  {
+   "name": "Scapular pull-ups",
+   "exercise": "Pull-ups",
+   "variation": "Scapular"
+  },
+  {
+   "name": "Scapular pull-up",
+   "exercise": "Pull-ups",
+   "variation": "Scapular"
+  },
+  {
+   "name": "Scap",
+   "exercise": "Pull-ups",
+   "variation": "Scapular"
+  },
+  {
+   "name": "Scapular retraction hangs",
+   "exercise": "Pull-ups",
+   "variation": "Scapular retraction"
+  },
+  {
+   "name": "Weighted chin-ups",
+   "exercise": "Pull-ups",
+   "variation": "Chin-up"
+  },
+  {
+   "name": "Band-assisted one-arm pull-ups",
+   "exercise": "One-arm pull-up"
+  },
+  {
+   "name": "Inverted rows (feet elevated)",
+   "exercise": "Inverted rows",
+   "variation": "Feet-elevated"
+  },
+  {
+   "name": "Feet-elevated rows (weighted)",
+   "exercise": "Inverted rows",
+   "variation": "Feet-elevated"
+  },
+  {
+   "name": "Rows",
+   "exercise": "Inverted rows"
+  },
+  {
+   "name": "Flexed-arm hang",
+   "exercise": "Dead hang",
+   "variation": "Flexed-arm"
+  },
+  {
+   "name": "Flexed-arm hang (chin over bar)",
+   "exercise": "Dead hang",
+   "variation": "Flexed-arm"
+  },
+  {
+   "name": "One arm",
+   "exercise": "Dead hang",
+   "variation": "One-arm"
+  },
+  {
+   "name": "Planche leans",
+   "exercise": "Planche",
+   "variation": "Lean"
+  },
+  {
+   "name": "Pseudo planche",
+   "exercise": "Planche",
+   "variation": "Lean"
+  },
+  {
+   "name": "Handstand hold",
+   "exercise": "Handstand"
+  },
+  {
+   "name": "Pistol",
+   "exercise": "Pistol squats"
+  },
+  {
+   "name": "Pistol R",
+   "exercise": "Pistol squats"
+  },
+  {
+   "name": "Pistol L",
+   "exercise": "Pistol squats"
+  },
+  {
+   "name": "Jump squats",
+   "exercise": "Bodyweight squats",
+   "variation": "Jump"
+  },
+  {
+   "name": "Paused Squats",
+   "exercise": "Bodyweight squats",
+   "variation": "Paused"
+  },
+  {
+   "name": "Bulgerian squat",
+   "exercise": "Bulgarian split squats"
+  },
+  {
+   "name": "Glute bridge",
+   "exercise": "Glute bridges"
+  },
+  {
+   "name": "Glute bridges (single leg)",
+   "exercise": "Glute bridges",
+   "variation": "Single-leg"
+  },
+  {
+   "name": "Assisted Nordic curls",
+   "exercise": "Nordic curls",
+   "variation": "Assisted"
+  },
+  {
+   "name": "Nordic",
+   "exercise": "Nordic curls"
+  },
+  {
+   "name": "Reverse Nordic",
+   "exercise": "Nordic curls",
+   "variation": "Reverse (quads)"
+  },
+  {
+   "name": "Nordic 15kg",
+   "exercise": "Nordic curls"
+  },
+  {
+   "name": "Leg raise",
+   "exercise": "Hanging leg raises"
+  },
+  {
+   "name": "Dragon flag negatives",
+   "exercise": "Dragon flag",
+   "variation": "Negative"
+  },
+  {
+   "name": "Hollow",
+   "exercise": "Hollow hold"
+  },
+  {
+   "name": "Wall angels",
+   "exercise": "Wall slides",
+   "variation": "Angels"
+  },
+  {
+   "name": "Arm circles",
+   "exercise": "Shoulder circles (CARs)",
+   "variation": "Arm circles"
+  },
+  {
+   "name": "Wrist rocks",
+   "exercise": "Wrist conditioning",
+   "variation": "Rocks"
+  },
+  {
+   "name": "Wrist warm-up",
+   "exercise": "Wrist conditioning",
+   "variation": "Warm-up"
+  },
+  {
+   "name": "Reverse lunges",
+   "exercise": "Lunges",
+   "variation": "Reverse"
+  },
+  {
+   "name": "Walking lunges",
+   "exercise": "Lunges",
+   "variation": "Walking"
+  },
+  {
+   "name": "Free run",
+   "exercise": "Run",
+   "variation": "Free run"
+  },
+  {
+   "name": "5K",
+   "exercise": "Run",
+   "variation": "5K"
+  },
+  {
+   "name": "Sprint",
+   "exercise": "Run",
+   "variation": "Sprint"
+  },
+  {
+   "name": "Trail",
+   "exercise": "Run",
+   "variation": "Trail"
+  },
+  {
+   "name": "Running",
+   "exercise": "Run"
+  },
+  {
+   "name": "Supline Planche",
+   "exercise": "Supine planche"
+  },
+  {
+   "name": "Supine Barbell Planche",
+   "exercise": "Supine planche",
+   "variation": "Barbell"
   }
  ]
 }

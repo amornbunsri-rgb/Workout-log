@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Workout" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="workout-log-style.css" />
 <script>
@@ -31,6 +31,10 @@
 <header>
   <div class="header-left">
     <button type="button" id="profileBtn" class="profile-btn" aria-label="Profile" title="Profile"><i class="fa-solid fa-user" aria-hidden="true"></i></button>
+    <span class="date-wrap">
+          <button type="button" id="headerDateBtn" class="date-btn" aria-label="Pick a date"></button>
+          <input type="date" id="dateInput" class="hidden-date-input" />
+        </span>
   </div>
   <div class="header-btns">
     <button class="menu-btn" id="pageNavBtn" aria-label="View calendar &amp; history" title="Calendar &amp; history"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
@@ -40,10 +44,10 @@
     <button class="menu-btn" id="menuBtn" aria-label="Settings &amp; backup" title="Settings &amp; backup"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
     <div class="menu-panel hidden" id="menuPanel">
       <div class="menu-icon-row">
-        <button class="icon-btn" id="exportXlsxBtn" type="button" aria-label="Export to Excel" title="Export to Excel"><i class="fa-solid fa-file-excel" aria-hidden="true"></i></button>
-        <button class="icon-btn" id="exportJsonBtn" type="button" aria-label="Export backup" title="Export backup"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></button>
+        <div class="menu-icon-item"><button class="icon-btn" id="exportXlsxBtn" type="button" aria-label="Export to Excel" title="Export to Excel"><i class="fa-solid fa-file-excel" aria-hidden="true"></i></button><span class="menu-icon-label">XLS</span></div>
+        <div class="menu-icon-item"><button class="icon-btn" id="exportJsonBtn" type="button" aria-label="Export backup" title="Export backup"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></button><span class="menu-icon-label">Export</span></div>
         <span class="menu-icon-sep" aria-hidden="true"></span>
-        <button class="icon-btn" id="importJsonBtn" type="button" aria-label="Import backup" title="Import backup"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i></button>
+        <div class="menu-icon-item"><button class="icon-btn" id="importJsonBtn" type="button" aria-label="Import backup" title="Import backup"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i></button><span class="menu-icon-label">Import</span></div>
       </div>
       <div class="theme-section">
         <div class="theme-label">Colour theme</div>
@@ -63,6 +67,19 @@
           <button type="button" class="mode-btn" data-units="imperial">Imperial</button>
         </div>
       </div>
+      <div class="theme-section">
+        <div class="theme-label">Week starts on</div>
+        <div class="mode-toggle" id="weekToggle">
+          <button type="button" class="mode-btn" data-week="1">Monday</button>
+          <button type="button" class="mode-btn" data-week="0">Sunday</button>
+        </div>
+      </div>
+      <div class="theme-section">
+        <label class="reset-option"><input type="checkbox" id="showLastToggle" /> Show previous session</label>
+      </div>
+      <div class="theme-section">
+        <label class="reset-option"><input type="checkbox" id="setFlagsToggle" /> Track RPE, pain &amp; Form</label>
+      </div>
       <div class="collapsible">
         <button class="collapsible-toggle" id="rearrangeToggleBtn"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i> Rearrange sections</button>
         <div class="hidden" id="settingsListWrap">
@@ -74,10 +91,12 @@
         <div class="hidden" id="resetWrap">
           <div class="reset-options" id="resetOptions">
             <label class="reset-option"><input type="checkbox" id="resetOptData" /> Logged entries (workout history)</label>
-            <label class="reset-option"><input type="checkbox" id="resetOptLists" /> Categories &amp; exercises</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptLists" /> Categories, exercises &amp; equipment</label>
             <label class="reset-option"><input type="checkbox" id="resetOptBlocks" /> Blocks</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptProfile" /> Bodyweight, measurements &amp; goals</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptPlans" /> Skill lines, My program &amp; plan progress</label>
             <label class="reset-option"><input type="checkbox" id="resetOptLayout" /> Section layout (rearrange)</label>
-            <label class="reset-option"><input type="checkbox" id="resetOptAppearance" /> Appearance (theme &amp; sets count)</label>
+            <label class="reset-option"><input type="checkbox" id="resetOptAppearance" /> Appearance (theme)</label>
           </div>
           <button type="button" class="danger-btn outline" id="resetSelectedBtn">Reset selected</button>
           <button type="button" class="danger-btn" id="resetAllBtn">Reset everything</button>
@@ -91,27 +110,16 @@
 <div id="mainContent">
   <div class="page" id="page-home">
 
-  <div class="module" id="module-category">
-    <div class="section-label-row">
-      <div class="section-label">Category</div>
-      <button class="icon-btn" id="editCatBtn" aria-label="Manage categories" title="Manage categories"><i class="fa-solid fa-pencil" aria-hidden="true"></i></button>
-    </div>
-    <div class="tabs" id="tabs"></div>
-  </div>
-
   <div class="module" id="module-exercise">
     <div class="exercise-header-row">
-      <div class="section-label exercise-title-row">
-        <span>Exercise</span>
-        <span class="date-wrap">
-          <button type="button" id="headerDateBtn" class="date-btn" aria-label="Pick a date"></button>
-          <input type="date" id="dateInput" class="hidden-date-input" />
-        </span>
-      </div>
       <div class="exercise-tools">
         <span class="exercise-tools-left">
           <span class="block-pill-wrap">
             <select id="blockSelect" class="block-pill-select"></select>
+            <i class="fa-solid fa-chevron-down block-pill-arrow" aria-hidden="true"></i>
+          </span>
+          <span class="block-pill-wrap">
+            <select id="categorySelect" class="block-pill-select" aria-label="Category"></select>
             <i class="fa-solid fa-chevron-down block-pill-arrow" aria-hidden="true"></i>
           </span>
         </span>
@@ -122,6 +130,7 @@
         </span>
       </div>
     </div>
+    <div class="plan-strip hidden" id="planStrip"></div>
     <div class="exercise-grid" id="exerciseGrid"></div>
     <input type="text" id="exerciseText" placeholder="Exercise name" class="hidden" />
     <div class="edit-panel hidden" id="exEditPanel">
@@ -138,11 +147,13 @@
   </div>
 
   <div class="module" id="module-metrics">
-    <div class="section-label metrics-title" id="metricsLabel">Reps &amp; eccentric (sec) &amp; kg per set</div>
+    <div class="section-label metrics-title hidden" id="metricsLabel">Reps &amp; eccentric (sec) &amp; kg per set</div>
     <div class="metrics-header-row">
+      <div class="metrics-header-left">
       <button type="button" class="pill-select-btn" id="supersetToggleBtn"><i class="fa-solid fa-link" aria-hidden="true"></i> Superset</button>
+      <button type="button" class="pill-select-btn hidden" id="holdModeToggleBtn" aria-pressed="false" aria-label="Attempts mode (tap to toggle)" title="Attempts mode: log separate hold attempts instead of working sets"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Attempts</button>
+    </div>
       <div class="metrics-header-actions">
-        <button type="button" class="pill-select-btn hidden" id="holdModeToggleBtn" aria-pressed="false" aria-label="Attempts mode (tap to toggle)" title="Attempts mode: log separate hold attempts instead of working sets"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Attempts</button>
         <button type="button" class="icon-btn" id="toolsBtn" aria-label="Timer, stopwatch &amp; metronome" aria-expanded="false" title="Timer, stopwatch &amp; metronome"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></button>
         <button type="button" class="icon-btn" id="clearMetricsBtn" aria-label="Clear inputs" title="Clear inputs"><i class="fa-solid fa-eraser" aria-hidden="true"></i></button>
       </div>
@@ -186,11 +197,16 @@
           <input type="number" min="0" step="1" id="elevationInput" placeholder="0" />
         </div>
       </div>
+      <div class="distance-row-pair hidden" id="distVarRow">
+        <div class="set-field">
+          <select id="distVarSelect" class="equip-select" required aria-label="Variation"></select>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="module" id="module-notes">
-    <div class="section-label">Notes</div>
+    
     <textarea id="notesInput" placeholder="Anything else — tempo, how it felt..."></textarea>
   </div>
 
@@ -249,6 +265,7 @@
     <div class="section-label-row">
       <div class="section-label">Blocks</div>
       <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="blocksSelectBtn" aria-label="Select several to delete" title="Select several to delete"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
         <button class="icon-btn" id="blocksSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
         <button class="icon-btn" id="blocksCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
       </div>
@@ -272,6 +289,7 @@
     <div class="section-label-row">
       <div class="section-label">Categories</div>
       <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="categoriesSelectBtn" aria-label="Select several to delete" title="Select several to delete"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
         <button class="icon-btn" id="categoriesSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
         <button class="icon-btn" id="categoriesCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
       </div>
@@ -295,6 +313,7 @@
     <div class="section-label-row">
       <div class="section-label">Equipment</div>
       <div style="display:flex; gap:6px;">
+        <button class="icon-btn" id="equipmentSelectBtn" aria-label="Select several to delete" title="Select several to delete"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
         <button class="icon-btn" id="equipmentSortBtn" aria-label="Sort: order added (tap to change)" title="Sort: order added — tap to change"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
         <button class="icon-btn" id="equipmentCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
       </div>
@@ -312,9 +331,6 @@
   <div class="module" id="module-config-bodyweight">
     <div class="section-label-row">
       <div class="section-label">Bodyweight</div>
-      <div style="display:flex; gap:6px;">
-        <button class="icon-btn" id="bodyweightCollapseBtn" aria-label="Collapse section" title="Collapse"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-      </div>
     </div>
     <div id="bodyweightSectionBody">
       <div class="empty" style="padding:0 0 8px;">Log your weight whenever you check it. The graph page uses it to show strength relative to bodyweight and to plot strength against bodyweight over time.</div>
@@ -332,6 +348,7 @@
     <div class="section-label-row">
       <div class="section-label">Exercises<span id="exercisesCount"></span></div>
       <div class="sort-group">
+        <button class="icon-btn" id="exSelectBtn" aria-label="Select several to delete" title="Select several to delete"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
         <button class="icon-btn" id="exSortToggleBtn" aria-label="Sort: A–Z (tap to change)" title="Sort: A–Z — tap to change"><i class="fa-solid fa-arrow-down-a-z" aria-hidden="true"></i></button>
         <button class="icon-btn" id="exListSearchBtn" aria-label="Search this list" title="Search this list"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
         <button class="icon-btn" id="addExerciseModalBtn" aria-label="Add exercise" title="Add exercise"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
@@ -375,6 +392,27 @@
       <button type="button" class="iso-toggle" id="exModalUniBtn">BI</button>
       <button type="button" class="iso-toggle" id="exModalLevBtn" title="Track an angle/leverage tag per set (e.g. planche/lever progressions, incline push-ups)">LEV OFF</button>
     </div>
+    <div class="modal-field">
+      <label for="exModalPattern">Movement pattern</label>
+      <select id="exModalPattern">
+        <option value="">Auto (from the name)</option>
+        <option value="vpush">Vertical push</option>
+        <option value="hpush">Horizontal push</option>
+        <option value="vpull">Vertical pull</option>
+        <option value="hpull">Horizontal pull</option>
+        <option value="core">Core</option>
+        <option value="legs">Legs</option>
+        <option value="mobility">Mobility</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label for="exModalStraight">Straight-arm load (planche, levers, handstands)</label>
+      <select id="exModalStraight">
+        <option value="">Auto (from the name)</option>
+        <option value="yes">Yes, count it toward straight-arm load</option>
+        <option value="no">No</option>
+      </select>
+    </div>
     <div class="modal-actions">
       <button type="button" class="danger hidden" id="exModalDeleteBtn">Delete</button>
       <button type="button" id="exModalCancelBtn">Cancel</button>
@@ -393,6 +431,10 @@
     <div class="modal-field">
       <label for="skillStepExercise">Tracked by exercise</label>
       <select id="skillStepExercise"></select>
+    </div>
+    <div class="modal-field">
+      <label for="skillStepVariation">Variation (optional)</label>
+      <select id="skillStepVariation"></select>
     </div>
     <div class="modal-field">
       <label for="skillStepMetric">Criterion</label>
@@ -424,7 +466,9 @@
 <script src="workout-shared.js"></script>
 <script src="workout-log.js"></script>
 <script src="workout-tools.js" defer></script>
+<script src="workout-extras.js" defer></script>
 <script src="workout-library.js" defer></script>
+<script src="workout-routines.js" defer></script>
 <script src="workout-variations.js" defer></script>
 <script src="workout-profile.js" defer></script>
 <script src="workout-backup.js" defer></script>

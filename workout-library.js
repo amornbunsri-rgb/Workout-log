@@ -14,9 +14,9 @@
   var MY_KEY = 'workout-log-myprogram-v1';
 
   function arr(x) { return Array.isArray(x) ? x : []; }
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function esc(s) { return window.WorkoutShared.escapeHtml(s); }
   function uid() { return 'mp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function todayISO() { return window.WorkoutShared.todayISO(); }
 
   // ---------------- load the JSON ----------------
   var lib = null, listeners = [];
@@ -92,14 +92,14 @@
   // ---------------- exercises behind a plan ----------------
   // Plan lines are free text ("A1 Weighted pull-ups"); the JSON catalogue says which real exercise they are,
   // which category it belongs in, and whether it is a hold or per-side exercise.
-  function exKey(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/tucked/g, 'tuck').replace(/s$/, ''); }
+  function exKey(n) { return window.WorkoutShared.exKey(n); }
   var catIndex = null;
   var varAliasIndex = null;
   function buildIndex() {
     catIndex = {};
     varAliasIndex = {};
     if (!lib) return;
-    arr(lib.variationAliases).forEach(function (a) { varAliasIndex[exKey(a.name)] = a; });
+    arr(lib.variationAliases).forEach(function (a) { if (!a.category) varAliasIndex[exKey(a.name)] = a; }); // category-limited aliases are only for the merge tool
     arr(lib.exercises).forEach(function (c) {
       catIndex[exKey(c.name)] = c;
       arr(c.aliases).forEach(function (a) { catIndex[exKey(a)] = c; });
@@ -111,15 +111,16 @@
     // "Negative pull-ups" is the Pull-ups exercise with the Negative variation, not an exercise of its own
     var va = varAliasIndex[exKey(nm)];
     var base = va ? catIndex[exKey(va.exercise)] : null;
-    if (base) return { name: base.name, category: base.category, isometric: !!base.isometric, unilateral: !!base.unilateral, variation: va.variation || null };
+    if (base) return { name: base.name, category: base.category, isometric: !!base.isometric, unilateral: !!base.unilateral, pattern: base.pattern, variation: va.variation || null };
     var c = catIndex[exKey(nm)];
-    if (c) return { name: c.name, category: c.category, isometric: !!c.isometric, unilateral: !!c.unilateral };
+    if (c) return { name: c.name, category: c.category, isometric: !!c.isometric, unilateral: !!c.unilateral, pattern: c.pattern };
     var t = x.target || '';
     return { name: nm, category: 'Skill', isometric: /\d\s*(s|sec|min)\b/i.test(t) && !/rep/i.test(t), unilateral: /(per|each) (leg|side|arm)/i.test(t) };
   }
   function withRoutines(item, d, exs) {
     var w = opts.warmStretch ? routineFor(item, d, 'warm') : null, s = opts.warmStretch ? routineFor(item, d, 'stretch') : null;
-    return arr(w && w.exercises).concat(arr(exs), arr(s && s.exercises)).map(resolveEx);
+    function tag(list, part) { return arr(list).map(function (x) { var r = resolveEx(x); r.sets = x.sets; r.target = x.target; r.part = part; return r; }); }
+    return tag(w && w.exercises, 'warm').concat(tag(exs, 'plan'), tag(s && s.exercises, 'stretch'));
   }
   // warm-up first, then the plan, then the stretch
   function planList(item, dayIdx) {
@@ -141,6 +142,7 @@
     var res = App.ensureExercises(planList(item, dayIdx));
     if (!res.refs.length) { App.showToast('This plan has no exercises to start'); return; }
     var finalName = App.startPlanBlock(blockName(item, dayIdx), res.refs);
+    if (App.registerPlanBlock) App.registerPlanBlock(finalName, { uid: item.uid, name: item.name, dayIdx: dayIdx, dayNames: arr(item.days).map(function (d) { return d.name; }), weeks: item.weeks || 0, dpw: item.daysPerWeek || arr(item.days).length || 1, progression: item.progression || '' });
     item.blockNames = arr(item.blockNames);
     if (item.blockNames.indexOf(finalName) < 0) item.blockNames.push(finalName);
     saveMine();
@@ -280,7 +282,7 @@
   function routineLine(r, label) {
     if (!r) return '';
     var list = arr(r.exercises).map(function (x) { return esc(x.name) + (x.target ? ' ' + esc(x.target) : ''); }).join(' · ');
-    return '<p class="lib-routine"><b>' + label + ' (' + esc(r.name) + ', ~' + (r.minutes || 5) + ' min):</b> ' + list + '</p>';
+    return '<p class="lib-routine"><b>' + label + ' (' + esc(r.name) + ', ~' + (r.minutes || 5) + ' min):</b> ' + list + ' <button type="button" class="text-btn lib-play" data-act="play" data-routine="' + esc(r.id) + '"><i class="fa-solid fa-play" aria-hidden="true"></i> Play</button></p>';
   }
   function detailsHTML(item) {
     var h = '';
@@ -305,6 +307,13 @@
     return '<div class="lib-start"><button type="button" class="lib-start-btn primary" data-act="start"' + (days.length === 1 ? ' data-day="0"' : '') + '><i class="fa-solid fa-play" aria-hidden="true"></i> Start</button></div>';
   }
   function formatLabel(f) { return f === 'superset' ? 'Superset' : f === 'circuit' ? 'Circuit' : ''; }
+  function planLine(item) {
+    if (!item.weeks || !App.planSessions) return '';
+    var days = arr(item.days), dpw = item.daysPerWeek || days.length || 1, total = item.weeks * dpw, n = App.planSessions(item.uid);
+    if (!n) return '';
+    if (n >= total) return '<div class="lib-bits plan-line">Programme complete · ' + n + ' sessions</div>';
+    return '<div class="lib-bits plan-line">Week ' + (Math.floor(n / dpw) + 1) + ' of ' + item.weeks + ' · next: ' + esc(days.length ? days[n % days.length].name : 'session') + '</div>';
+  }
   function buildCard(item, mode) {
     var key = (mode === 'mine' ? item.uid : item.id);
     var open = !!state.open[key];
@@ -326,12 +335,14 @@
         (mode === 'mine' && item.kind === 'custom' ? '<span class="lib-badge">Custom</span>' : '') +
       '</div>' +
       (bits.length ? '<div class="lib-bits">' + esc(bits.join('  ·  ')) + '</div>' : '') +
+      (mode === 'mine' && item.uid ? planLine(item) : '') +
       (item.summary ? '<div class="lib-summary">' + esc(item.summary) + '</div>' : '') +
       startRowHTML(item) +
       '<button type="button" class="text-btn lib-more" data-act="more" aria-expanded="' + open + '">' + (open ? 'Hide details' : 'Show details') + '</button>' +
       '<div class="lib-details' + (open ? '' : ' hidden') + '">' + detailsHTML(item) + '</div>';
     card.onclick = function (e) {
       var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+      if (b.dataset.act === 'play') { if (window.WorkoutRoutines) window.WorkoutRoutines.play(b.dataset.routine); return; }
       if (b.dataset.act === 'more') { state.open[key] = !state.open[key]; renderBrowse(); renderMine(); }
       else if (b.dataset.act === 'add') addToMine(item, state.tab === 'workouts' ? 'workout' : 'programme');
       else if (b.dataset.act === 'start') {
@@ -441,6 +452,7 @@
   renderAll();
   ready.then(function () {
     if (App.refreshVariations) App.refreshVariations();
+    if (App.fillPatterns) App.fillPatterns();
     if ((App.skillLineNames && App.skillLineNames().length) || mine.length) state.tab = 'mine';
     notify(); renderAll();
   });

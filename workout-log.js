@@ -3,10 +3,9 @@
    Extra features live in workout-tools.js, workout-library.js and workout-profile.js (loaded afterwards). */
 (function () {
   // ---------- Everything below is self-contained: no other files required ----------
-  const MAIN_CATEGORY_NAME = "Main workout";
+  const LEGACY_MAIN_CATEGORY = "Main workout"; // retired category: ignored when loading or importing old data
   const UNCATEGORIZED_NAME = "Uncategorized";
   const DEFAULT_EXERCISE_LISTS = {
-    "Main workout": [],
     "Push": [
       { name: "Assisted HS push/hold", color: "#c7a6e0", isometric: true },
       { name: "Pseudo planche", color: "#e0cd9e", isometric: true },
@@ -41,12 +40,12 @@
   const PER_LEG_EXERCISES = ["tucked lever"];
   const MIN_SETS = 1;
   const MAX_SETS = 20;
-  const DEFAULT_NUM_SETS = 4;
+  const DEFAULT_NUM_SETS = 1; // every exercise starts with one set; Add set / Remove set only change the current screen
 
   const DATA_KEY = "workout-log-data-v1";
   const LISTS_KEY = "workout-log-lists-v3";
   const LAYOUT_KEY = "workout-log-layout-v1";
-  const NUMSETS_KEY = "workout-log-numsets-v1";
+  const NUMSETS_KEY = "workout-log-numsets-v1"; // no longer used; kept so Reset still clears an old saved value
   const THEME_KEY = "workout-log-theme-v1";
   // older keys this page can recover data from, so nothing gets lost switching versions
   const LEGACY_LISTS_KEYS = ["workout-log-lists-v2", "workout-log-lists-v1"];
@@ -63,8 +62,7 @@
     } catch (e) { /* ignore */ }
     return fallback;
   }
-  function loadNumSets() { return lsInt(NUMSETS_KEY, n => n >= MIN_SETS && n <= MAX_SETS, DEFAULT_NUM_SETS); }
-  function saveNumSets() { lsSet(NUMSETS_KEY, numSets); }
+  function loadNumSets() { return DEFAULT_NUM_SETS; }
   function loadTheme() { return lsInt(THEME_KEY, idx => !!THEMES[idx], 0); }
   function applyTheme(idx) { Shared.applyTheme(idx, themeMode); }
   function saveTheme(idx) { lsSet(THEME_KEY, idx); }
@@ -75,6 +73,7 @@
   function loadUnits() { return Shared.loadUnits(); }
   function saveUnits(units) { lsSet(UNITS_KEY, units); }
   let unitSystem = loadUnits();
+  let weekStart = Shared.loadWeekStart();
   const { KM_TO_MI, KG_TO_LB, M_TO_FT } = Shared;
   // These convert the distance-mode fields (km/rucking kg/elevation) and the per-set "Weighted" label —
   // the underlying stored kg value itself is not converted, only the displayed unit text.
@@ -86,6 +85,8 @@
   function kgToDisplay(kg) { return Shared.kgToDisplay(unitSystem, kg); }
   function displayToKg(v) { return unitSystem === 'imperial' ? v / KG_TO_LB : v; }
   function round2(n) { return Shared.round2(n); }
+  // set weights are stored in kg; the weight field is typed in the unit chosen in settings
+  function kgFromInput(v) { return Math.round(displayToKg(Number(v)) * 1000) / 1000; }
   function mToDisplay(m) { return Shared.mToDisplay(unitSystem, m); }
   function displayToM(v) { return unitSystem === 'imperial' ? v / M_TO_FT : v; }
   // Accepts "2:50", "2.50" (hours + literal minutes, not a decimal fraction) or a plain
@@ -146,19 +147,48 @@
     btn.onclick = () => {
       unitSystem = btn.dataset.units;
       saveUnits(unitSystem);
+      lsSet('workout-log-prefs-ts-v1', Date.now());
       renderUnitsToggle();
       renderModifiers();
       renderBodyweightList(); // weigh-in list + its input placeholder show the unit
     };
   });
   renderUnitsToggle();
+  function renderWeekToggle() { document.querySelectorAll('#weekToggle .mode-btn').forEach(btn => btn.classList.toggle('active', +btn.dataset.week === weekStart)); }
+  document.querySelectorAll('#weekToggle .mode-btn').forEach(btn => {
+    btn.onclick = () => {
+      weekStart = +btn.dataset.week;
+      lsSet(Shared.WEEK_KEY, weekStart);
+      lsSet('workout-log-prefs-ts-v1', Date.now());
+      renderWeekToggle();
+      expandedWeeks = new Set(); weeksNeedDefaultExpand = true;
+      renderCalendar(); renderEntries();
+    };
+  });
+  renderWeekToggle();
+  (function setupFlagsToggle() {
+    const KEY = 'workout-log-setflags-v1', box = document.getElementById('setFlagsToggle');
+    let on = false;
+    try { on = localStorage.getItem(KEY) === '1'; } catch (e) { /* off */ }
+    document.documentElement.classList.toggle('flags-on', on);
+    if (!box) return;
+    box.checked = on;
+    box.onchange = () => { document.documentElement.classList.toggle('flags-on', box.checked); lsSet(KEY, box.checked ? '1' : '0'); };
+  })();
+  let showLast = true;
+  try { showLast = localStorage.getItem('workout-log-showlast-v1') !== '0'; } catch (e) { /* on */ }
+  function resetEccPlaceholders() { document.querySelectorAll('#setsGrid input.ecc-input').forEach(i => { i.placeholder = 'sec'; }); }
+  (function () {
+    const box = document.getElementById('showLastToggle');
+    if (!box) return;
+    box.checked = showLast;
+    box.onchange = () => { showLast = box.checked; lsSet('workout-log-showlast-v1', showLast ? '1' : '0'); resetEccPlaceholders(); renderModifiers(); };
+  })();
   let themeMode = loadMode();
   let numSets = loadNumSets();
   let themeIndex = loadTheme();
-  let isUnilateral = false;
 
   const DEFAULT_LAYOUT = [
-    { id: "category", visible: true },
     { id: "exercise", visible: true },
     { id: "metrics", visible: true },
     { id: "notes", visible: true },
@@ -167,18 +197,18 @@
     { id: "entries", visible: true }
   ];
   const MODULE_LABELS = {
-    category: "Category", exercise: "Exercise", metrics: "Sets & reps",
+    exercise: "Exercise", metrics: "Sets & reps",
     notes: "Notes", addButton: "Add entry button", calendar: "Calendar",
     entries: "Entries list"
   };
 
   function normalizeExercise(e) {
     if (typeof e === "string") return { name: e, color: null, isometric: false, unilateral: false };
-    return {
+    return Object.assign({}, e, {
       name: e.name || "", color: e.color || null,
       isometric: !!e.isometric,
       unilateral: e.unilateral !== undefined ? !!e.unilateral : PER_LEG_EXERCISES.includes((e.name || '').trim().toLowerCase())
-    };
+    });
   }
   function migrateList(arr) { return (arr || []).map(normalizeExercise); }
 
@@ -192,14 +222,10 @@
         if (!raw) continue;
         const parsed = JSON.parse(raw);
         if (parsed && parsed.categories && parsed.exercises) {
-          const categories = parsed.categories;
+          const categories = parsed.categories.filter(c => c !== LEGACY_MAIN_CATEGORY);
           const exerciseLists = {};
           categories.forEach(c => {
-            // Main workout stores lightweight { name, refCategory } pointers,
-            // not real exercise objects — normalizeExercise would strip
-            // refCategory, so leave it untouched here; the migration step
-            // right after loadLists() sorts out any old-format entries.
-            exerciseLists[c] = (c === MAIN_CATEGORY_NAME) ? (parsed.exercises[c] || []) : migrateList(parsed.exercises[c]);
+            exerciseLists[c] = migrateList(parsed.exercises[c]);
           });
           const categoryColors = parsed.colors || {};
           return { categories, exerciseLists, categoryColors };
@@ -239,7 +265,21 @@
   function saveBlocks() { lsSet(BLOCKS_KEY, JSON.stringify({ blocks, blockRefs, hiddenBlocks, planBlocks })); }
   // planBlocks: the blocks created by starting a plan from My program (shown under "Plans" in the block picker)
   let { blocks, blockRefs, hiddenBlocks, planBlocks } = loadBlocks();
+  // plan progress: which plan day each plan block is, and the sessions logged per plan (for "Week 2 of 6, Day B")
+  const PLANMETA_KEY = 'workout-log-planmeta-v1', PLANPROG_KEY = 'workout-log-planprogress-v1';
+  function loadObj(key) { try { const o = JSON.parse(localStorage.getItem(key)); if (o && typeof o === 'object' && !Array.isArray(o)) return o; } catch (e) { /* none yet */ } return {}; }
+  let planMeta = loadObj(PLANMETA_KEY), planProgress = loadObj(PLANPROG_KEY);
+  function savePlanMeta() { lsSet(PLANMETA_KEY, JSON.stringify(planMeta)); }
+  function savePlanProgress() { lsSet(PLANPROG_KEY, JSON.stringify(planProgress)); }
+  // exercises removed on this device (merged away or deleted), so sync does not bring them back; keyed by lower-case name
+  const REMOVEDEX_KEY = 'workout-log-removedex-v1';
+  let removedExercises = loadObj(REMOVEDEX_KEY);
+  function saveRemovedEx() { lsSet(REMOVEDEX_KEY, JSON.stringify(removedExercises)); }
+  function markExerciseRemoved(name) { if (!name) return; removedExercises[String(name).toLowerCase()] = Date.now(); saveRemovedEx(); }
+  // true when the exercise is older than its removal (an exercise created again afterwards is kept)
+  function exRemovedAfter(ex) { const ts = removedExercises[String((ex && ex.name) || '').toLowerCase()]; return !!ts && (ex.createdAt || 0) < ts; }
   let activeBlock = null; // name of the block currently filtering the exercise grid, or null for "no block"
+  let bulkQuiet = false; // true while several items are deleted at once (one confirmation for the lot)
 
   // ---- Equipment: a small user-editable tag list (bar/rings/parallettes/...) attachable to any logged entry ----
   const EQUIPMENT_KEY = "workout-log-equipment-v1";
@@ -296,6 +336,7 @@
       id: (typeof st.id === 'string' && st.id) ? st.id : newSkillId(),
       name: st.name.trim(),
       exercise: (typeof st.exercise === 'string' && st.exercise) ? st.exercise : null,
+      variation: (typeof st.variation === 'string' && st.variation) ? st.variation : null,
       metric,
       target: target > 0 ? target : (metric === 'hold' ? 20 : 5),
       sets: sets >= 1 ? Math.min(sets, 20) : 3,
@@ -331,49 +372,6 @@
   categories.forEach(c => data[c] = []);
   let layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT));
 
-  // Main workout used to be a special aggregator category that held
-  // { name, refCategory } pointers into other categories. That job now
-  // belongs to Blocks, so on load we convert any existing "Main workout"
-  // data into a Block of the same name and remove it as a category.
-  (function migrateMainWorkoutToBlock() {
-    if (!categories.includes(MAIN_CATEGORY_NAME)) return;
-    const raw = exerciseLists[MAIN_CATEGORY_NAME] || [];
-    const validRefs = [];
-    const legacyExercises = [];
-    raw.forEach(item => {
-      if (item && typeof item === 'object' && item.refCategory) {
-        validRefs.push({ name: item.name, refCategory: item.refCategory });
-      } else if (item) {
-        legacyExercises.push(normalizeExercise(item));
-      }
-    });
-    // Any genuine exercise objects that had ended up directly under Main
-    // workout (from before it was reference-only) move into Skill so
-    // nothing gets orphaned.
-    if (legacyExercises.length) {
-      const target = categories.includes("Skill") ? "Skill" : (categories.find(c => c !== MAIN_CATEGORY_NAME) || null);
-      if (target) {
-        if (!exerciseLists[target]) exerciseLists[target] = [];
-        legacyExercises.forEach(exObj => {
-          if (!exerciseLists[target].some(e => e.name === exObj.name)) exerciseLists[target].push(exObj);
-        });
-      }
-    }
-    if (validRefs.length) {
-      let blockName = MAIN_CATEGORY_NAME;
-      if (blocks.includes(blockName)) blockName = blockName + ' (imported)';
-      blocks.push(blockName);
-      blockRefs[blockName] = validRefs;
-      saveBlocks();
-    }
-    categories = categories.filter(c => c !== MAIN_CATEGORY_NAME);
-    delete exerciseLists[MAIN_CATEGORY_NAME];
-    delete data[MAIN_CATEGORY_NAME];
-    delete categoryColors[MAIN_CATEGORY_NAME];
-    if (active === MAIN_CATEGORY_NAME) active = categories[0];
-    saveLists();
-  })();
-
   function findExerciseOwner(name) {
     for (const cat of categories) {
       const found = (exerciseLists[cat] || []).find(e => e.name === name);
@@ -388,7 +386,7 @@
       let exObj = (exerciseLists[cat] || []).find(e => e.name === ref.name);
       if (!exObj) {
         // the exercise was moved to another category since the block was made: find it by name instead of dropping it
-        cat = Object.keys(exerciseLists).find(c => c !== MAIN_CATEGORY_NAME && (exerciseLists[c] || []).some(e => e.name === ref.name)) || null;
+        cat = Object.keys(exerciseLists).find(c => (exerciseLists[c] || []).some(e => e.name === ref.name)) || null;
         if (cat) exObj = exerciseLists[cat].find(e => e.name === ref.name);
       }
       if (exObj && !resolved.some(r => r.exObj === exObj)) resolved.push({ exObj, originCategory: cat });
@@ -404,8 +402,6 @@
     return (exerciseLists[active] || []).map(exObj => ({ exObj, originCategory: active }));
   }
 
-  const tabsEl = document.getElementById('tabs');
-  const catEditBtn = document.getElementById('editCatBtn');
   const catEditList = document.getElementById('catEditList');
   const newCatInput = document.getElementById('newCatInput');
 
@@ -461,6 +457,7 @@
     }
   };
   dateInput.addEventListener('change', updateHeaderDateDisplay);
+  dateInput.addEventListener('change', () => { if (activeBlock) updateExercisePicker(); });
 
   // ---- Superset (group several exercises logged back-to-back) ----
   let activeSuperset = null; // { id, date, count } or null when not actively grouping
@@ -538,26 +535,15 @@
   // on the same continuum as added weight (e.g. +10kg), for the same exercise.
   function formatLoadKg(kg) {
     if (kg === null || kg === undefined || kg === '' || Number(kg) === 0) return '';
-    const n = Number(kg);
-    return (n > 0 ? '+' : '') + n + weightUnitLabel();
-  }
-  function maxHoldInSet(s) {
-    if (s && typeof s === 'object' && s.left !== undefined) return Math.max(Number(s.left) || 0, Number(s.right) || 0);
-    const val = (s && typeof s === 'object') ? s.reps : s;
-    const n = Number(val);
-    return isNaN(n) ? 0 : n;
-  }
-  function repsInSet(s) {
-    if (!s || typeof s !== 'object') return 0;
-    const val = s.left !== undefined ? Math.max(Number(s.left) || 0, Number(s.right) || 0) : Number(s.reps);
-    return isNaN(val) ? 0 : val;
+    const n = round2(kgToDisplay(Number(kg)));
+    return (n > 0 ? '+' : 'banded ') + n + weightUnitLabel();
   }
   // Load metrics for one set that has added weight: volume = kg x reps, and an estimated 1RM
   // (shared formula, see workout-shared.js: Epley on bodyweight + added load, trusted for 1-12 reps).
   // Added weight only; assistance (negative) loads and plain bodyweight sets return null.
   // bwKg is your bodyweight on the day of the set (0 when no weigh-in is logged yet).
   function setLoadMetrics(s, bwKg) {
-    if (!s || typeof s !== 'object' || s.kg == null || s.kg === '') return null;
+    if (!s || typeof s !== 'object' || s.formBroke || s.kg == null || s.kg === '') return null;
     const kg = Number(s.kg), reps = Shared.setReps(s);
     if (isNaN(kg) || kg <= 0 || !(reps > 0)) return null;
     return { volume: kg * reps, e1rm: Shared.est1rmAdded(bwKg || 0, kg, reps) };
@@ -569,13 +555,16 @@
   // negative/assistance loads never count as a PR here), and — for distance exercises —
   // longest distance, longest time, most elevation, and fastest pace (lower is better).
   // varKey: undefined = count every set; otherwise only sets with that variation ('' = no variation).
-  function computeExerciseBests(name, varKey) {
+  function entryKey(e) { return String(e.date || '') + '|' + String(e.id || '').padStart(20, '0'); }
+  function computeExerciseBests(name, varKey, cutoffKey) {
     const bwSorted = sortedBodyweightLog();
     let bestHold = null, bestReps = null, bestWeight = null, bestE1RM = null, bestSetVolume = null;
     let bestDistance = null, bestTime = null, bestElevation = null, bestPaceMinPerKm = null;
     categories.forEach(cat => {
       (data[cat] || []).forEach(e => {
         if (e.exercise !== name) return;
+        if (cutoffKey && entryKey(e) >= cutoffKey) return; // only what came before this entry
+        if (e.distance != null && varKey !== undefined && (e.variation || '') !== varKey) return; // runs: bests per variation
         if (e.distance != null && e.distance > 0 && (bestDistance === null || e.distance > bestDistance)) bestDistance = e.distance;
         if (e.timeMinutes != null && e.timeMinutes > 0 && (bestTime === null || e.timeMinutes > bestTime)) bestTime = e.timeMinutes;
         if (e.elevation != null && e.elevation > 0 && (bestElevation === null || e.elevation > bestElevation)) bestElevation = e.elevation;
@@ -585,10 +574,10 @@
         }
         (e.sets || []).filter(s => varKey === undefined || setVar(s) === varKey).forEach(s => {
           if (e.isometric) {
-            const hold = maxHoldInSet(s);
+            const hold = Shared.cleanReps(s);
             if (hold > 0 && (bestHold === null || hold > bestHold)) bestHold = hold;
           } else {
-            const reps = repsInSet(s);
+            const reps = Shared.cleanReps(s);
             if (reps > 0 && (bestReps === null || reps > bestReps)) bestReps = reps;
           }
           if (s && typeof s === 'object' && s.kg != null && s.kg !== '') {
@@ -686,12 +675,12 @@
       col.className = 'set-col';
       col.innerHTML = `
         <div class="set-num" aria-hidden="true">${i}</div>
-        <div class="set-field set-field-reps">
+        <div class="set-body"><div class="set-row"><div class="set-field set-field-reps">
           <label for="set${i}">Reps</label>
-          <input type="number" min="2" id="set${i}" placeholder="reps" />
+          <input type="number" min="1" id="set${i}" placeholder="reps" />
           <div class="lr-row hidden" id="lr${i}">
-            <input type="number" min="2" id="left${i}" placeholder="L" />
-            <input type="number" min="2" id="right${i}" placeholder="R" />
+            <input type="number" min="1" id="left${i}" placeholder="L" />
+            <input type="number" min="1" id="right${i}" placeholder="R" />
           </div>
         </div>
         <div class="set-field ecc-field">
@@ -699,21 +688,23 @@
           <input type="number" min="0" id="ecc${i}" placeholder="sec" class="ecc-input" />
         </div>
         <div class="set-field">
-          <label for="kg${i}">Weighted (±)</label>
+          <label for="kg${i}">Weight / band (−)</label>
           <input type="number" step="0.5" id="kg${i}" placeholder="±${weightUnitLabel()}" class="kg-input" />
         </div>
         <div class="set-field angle-field hidden">
           <label for="angle${i}">Angle/leverage</label>
           <input type="text" id="angle${i}" placeholder="e.g. 15° or tuck" class="angle-input" />
         </div>
+        </div><div class="set-row set-row-sub">
         <div class="set-field variation-field hidden">
-          <label for="var${i}">Variation</label>
-          <select id="var${i}" class="equip-select var-select" aria-label="Variation for set ${i}"></select>
+          <select id="var${i}" class="equip-select var-select" required aria-label="Variation for set ${i}"></select>
         </div>
         <div class="set-field equip-field">
-          <label for="equip${i}">Equipment</label>
-          <select id="equip${i}" class="equip-select" aria-label="Equipment for set ${i}"></select>
-        </div>`;
+          <select id="equip${i}" class="equip-select" required aria-label="Equipment for set ${i}"></select>
+        </div>${i > 1 ? `<div class="set-field chain-field hidden"><select id="chain${i}" class="equip-select" required aria-label="Chain set ${i} to the previous set"><option value="">Chain</option><option value="1">Chained to previous</option></select></div>` : ''}</div><div class="set-row set-row-flags">
+          <div class="set-field"><select id="rpe${i}" class="equip-select" required aria-label="RPE for set ${i}"><option value="">RPE</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
+          <div class="set-field"><select id="flag${i}" class="equip-select" required aria-label="Flag for set ${i}"><option value="">Flag</option><option value="broke">Form broke</option><option value="pain">Pain</option><option value="both">Pain + form broke</option></select></div>
+        </div></div>`;
       setsGrid.appendChild(col);
       // a set that didn't exist before (Add set) starts with the previous set's equipment
       const equipStart = prev['equip' + i] !== undefined ? prev['equip' + i] : (i > 1 ? document.getElementById('equip' + (i - 1)).value : '');
@@ -727,6 +718,9 @@
       document.getElementById('ecc' + i).value = prev['ecc' + i] || '';
       document.getElementById('kg' + i).value = prev['kg' + i] || '';
       document.getElementById('angle' + i).value = prev['angle' + i] || '';
+      document.getElementById('rpe' + i).value = prev['rpe' + i] || '';
+      document.getElementById('flag' + i).value = prev['flag' + i] || '';
+      { const ch = document.getElementById('chain' + i); if (ch) ch.value = prev['chain' + i] || ''; }
     }
     for (let i = 1; i <= numSets; i++) {
       document.getElementById('ecc' + i).addEventListener('input', () => onEccInput(i));
@@ -775,14 +769,13 @@
     if (numSets <= MIN_SETS) return;
     // Shift every later set's values up into this one, then drop the last slot.
     for (let j = idx; j < numSets; j++) {
-      ['set', 'left', 'right', 'ecc', 'kg', 'angle', 'equip', 'var'].forEach(prefix => {
+      ['set', 'left', 'right', 'ecc', 'kg', 'angle', 'equip', 'var', 'rpe', 'flag', 'chain'].forEach(prefix => {
         const from = document.getElementById(prefix + (j + 1));
         const to = document.getElementById(prefix + j);
         if (from && to) to.value = from.value;
       });
     }
     numSets--;
-    saveNumSets();
     resetEccCascade();
     resetKgCascade();
     resetEquipCascade();
@@ -857,7 +850,6 @@
     opts = opts || {};
     clearSetInputs();
     numSets = 1;
-    saveNumSets();
     setsScrollOffset = 0;
     buildSetsGrid();
     clearAttemptInputs();
@@ -869,6 +861,7 @@
     document.getElementById('ruckKgInput').value = '';
     document.getElementById('elevationInput').value = '';
     document.getElementById('timeInput').value = '';
+    { const dv = document.getElementById('distVarSelect'); if (dv) dv.value = ''; }
     notesInput.value = '';
   }
   // Per-exercise scratch pad for not-yet-logged values, so switching between
@@ -889,7 +882,8 @@
       distance: distanceInput.value,
       ruckKg: document.getElementById('ruckKgInput').value,
       elevation: document.getElementById('elevationInput').value,
-      time: document.getElementById('timeInput').value
+      time: document.getElementById('timeInput').value,
+      distVar: (document.getElementById('distVarSelect') || {}).value || ''
     };
   }
   // Equipment from the most recent entry of this exercise (its last set that has one), if you still have that equipment.
@@ -918,7 +912,6 @@
     const d = name ? exerciseDrafts[name] : null;
     if (!d) { resetLogInputs({ clearEquipment: true }); if (name) { prefillEquipment(name); prefillVariation(name); } return; }
     numSets = d.numSets;
-    saveNumSets();
     setsScrollOffset = d.setsScrollOffset || 0;
     buildSetsGrid();
     Object.keys(d.setsValues).forEach(id => { const el = document.getElementById(id); if (el) el.value = d.setsValues[id]; });
@@ -933,6 +926,7 @@
     document.getElementById('elevationInput').value = d.elevation || '';
     document.getElementById('timeInput').value = d.time || '';
     updateMetricsSection(name);
+    { const dv = document.getElementById('distVarSelect'); if (dv && d.distVar) dv.value = d.distVar; }
   }
   // Call when the exercise selection changes: saves what was typed for the
   // exercise you're leaving, then brings back whatever you'd typed for the
@@ -1008,13 +1002,25 @@
     const hit = lib.variations.find(v => exKey(v.exercise) === key);
     return hit ? hit.variations : [];
   }
+  // Some variations are one-sided even when the exercise is not (Archer, Typewriter, one-arm): their sets take left/right values.
+  function isOneSidedVariation(name, variation) {
+    if (!variation) return false;
+    const lib = window.WorkoutLibrary && window.WorkoutLibrary.get();
+    const hit = lib && Array.isArray(lib.variations) ? lib.variations.find(v => exKey(v.exercise) === exKey(name)) : null;
+    return !!(hit && Array.isArray(hit.oneSided) && hit.oneSided.includes(variation));
+  }
+  function setIsUni(name, i) {
+    if (isUnilateralExercise(name)) return true;
+    const v = document.getElementById('var' + i);
+    return !!(v && isOneSidedVariation(name, v.value));
+  }
   function fillVarSelect(sel, current) {
     if (!sel) return;
     const keep = current !== undefined ? current : sel.value;
     const list = exerciseVariations(currentExerciseName());
     sel.innerHTML = '';
     const none = document.createElement('option');
-    none.value = ''; none.textContent = '—';
+    none.value = ''; none.textContent = 'Variation';
     sel.appendChild(none);
     const all = keep && !list.includes(keep) ? list.concat(keep) : list; // never drop a value that is already chosen
     all.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
@@ -1027,7 +1033,7 @@
       if (varEdited[j]) break;
       document.getElementById('var' + j).value = val;
     }
-    if (idx === 1) renderModifiers(); // the best-so-far tags follow the variation you picked
+    if (idx === 1) renderModifiers(); else updateMetricsSection(currentExerciseName()); // best-so-far tags and left/right fields follow the variation
   }
   function resetVarCascade() { varEdited = new Array(numSets + 1).fill(false); }
   // Variation from the most recent entry of this exercise (its last set that has one).
@@ -1071,7 +1077,6 @@
   document.getElementById('addSetBtn').onclick = () => {
     if (numSets >= MAX_SETS) return;
     numSets++;
-    saveNumSets();
     setsScrollOffset = Math.max(0, numSets - SETS_WINDOW); // scroll to reveal the new set
     buildSetsGrid();
     focusRepsInput(numSets);
@@ -1113,18 +1118,22 @@
     resetToggleBtn.classList.toggle('open', opening);
   };
   const RESET_KEYS = {
-    data: [DATA_KEY],
-    lists: [LISTS_KEY, ...LEGACY_LISTS_KEYS],
+    data: [DATA_KEY, "workout-log-deleted-v1"],
+    lists: [LISTS_KEY, ...LEGACY_LISTS_KEYS, EQUIPMENT_KEY, REMOVEDEX_KEY, 'workout-log-premerge-v1'],
     blocks: [BLOCKS_KEY],
     layout: [LAYOUT_KEY],
-    appearance: [NUMSETS_KEY, THEME_KEY, MODE_KEY]
+    appearance: [NUMSETS_KEY, THEME_KEY, MODE_KEY],
+    profile: [BODYWEIGHT_KEY, 'workout-log-measurements-v1', 'workout-log-goals-v1'],
+    plans: [SKILLS_KEY, 'workout-log-myprogram-v1', PLANMETA_KEY, PLANPROG_KEY, 'workout-log-plan-options-v1']
   };
   const RESET_LABELS = {
     data: 'logged entries (your workout history)',
-    lists: 'categories & exercises',
+    lists: 'categories, exercises & equipment',
     blocks: 'blocks',
     layout: 'section layout',
-    appearance: 'appearance settings (theme & set count)'
+    appearance: 'appearance settings (theme)',
+    profile: 'bodyweight, measurements & goals',
+    plans: 'skill lines, My program & plan progress'
   };
   function clearResetGroup(key) {
     RESET_KEYS[key].forEach(k => localStorage.removeItem(k));
@@ -1141,6 +1150,8 @@
       lists: document.getElementById('resetOptLists').checked,
       blocks: document.getElementById('resetOptBlocks').checked,
       layout: document.getElementById('resetOptLayout').checked,
+      profile: document.getElementById('resetOptProfile').checked,
+      plans: document.getElementById('resetOptPlans').checked,
       appearance: document.getElementById('resetOptAppearance').checked
     };
     const chosen = Object.keys(checks).filter(k => checks[k]);
@@ -1151,7 +1162,7 @@
     location.reload();
   };
   document.getElementById('resetAllBtn').onclick = () => {
-    if (!confirm("This permanently erases EVERYTHING — all logged workouts, categories, exercises, blocks, and settings — and can't be undone.\n\nReset the app completely?")) return;
+    if (!confirm("This permanently erases EVERYTHING — all logged workouts, categories, exercises, blocks, equipment, skills, bodyweight, measurements, goals, plans and settings — and can't be undone. Photos, your profile picture and the Drive and backup settings are kept.\n\nReset the app completely?")) return;
     if (!confirm("Really sure? There's no way to get this data back once it's gone.")) return;
     Object.keys(RESET_KEYS).forEach(clearResetGroup);
     location.reload();
@@ -1276,16 +1287,20 @@
 
   // ---- Category tabs + edit (add / rename / delete) ----
   function renderTabs() {
-    tabsEl.innerHTML = '';
-    categories.forEach(cat => {
-      const color = getCategoryColor(cat);
-      const b = document.createElement('button');
-      b.className = 'tab' + (cat === active ? ' active' : '');
-      b.style.background = color;
-      b.textContent = cat;
-      b.onclick = () => { active = cat; activeBlock = null; renderBlockSelect(); updateExercisePicker(); render(); };
-      tabsEl.appendChild(b);
-    });
+    // category pill next to the block pill; it shows "Category" while a block is selected
+    const sel = document.getElementById('categorySelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = 'Category'; ph.disabled = true;
+    sel.appendChild(ph);
+    categories.forEach(cat => { const o = document.createElement('option'); o.value = cat; o.textContent = cat; sel.appendChild(o); });
+    sel.value = activeBlock ? '' : active;
+    sel.onchange = () => {
+      if (!sel.value) return;
+      active = sel.value; activeBlock = null;
+      renderBlockSelect(); updateExercisePicker(); render();
+    };
   }
 
   // ---- Add/Edit exercise modal — shared by Blocks, Categories, and the Exercises list ----
@@ -1309,6 +1324,8 @@
     });
     catSel.value = category;
     document.getElementById('exModalColor').value = (exObj && exObj.color) || EX_COLOR_PALETTE[0];
+    document.getElementById('exModalPattern').value = (exObj && exObj.pattern) || '';
+    document.getElementById('exModalStraight').value = (exObj && exObj.straightArm !== undefined) ? (exObj.straightArm ? 'yes' : 'no') : '';
     const isoBtn = document.getElementById('exModalIsoBtn');
     const uniBtn = document.getElementById('exModalUniBtn');
     const levBtn = document.getElementById('exModalLevBtn');
@@ -1356,6 +1373,7 @@
     if (!exModalEditing) return;
     if (!confirm(`Delete "${exModalEditing.name}"?`)) return;
     exerciseLists[exModalEditing.category] = (exerciseLists[exModalEditing.category] || []).filter(e => e.name !== exModalEditing.name);
+    markExerciseRemoved(exModalEditing.name);
     if (selectedExercise === exModalEditing.name) selectedExercise = "";
     saveLists();
     updateExercisePicker();
@@ -1371,6 +1389,8 @@
     const isometric = document.getElementById('exModalIsoBtn').classList.contains('on');
     const unilateral = document.getElementById('exModalUniBtn').classList.contains('on');
     const hasLeverage = document.getElementById('exModalLevBtn').classList.contains('on');
+    const pattern = document.getElementById('exModalPattern').value;
+    const sa = document.getElementById('exModalStraight').value;
 
     if (exModalEditing) {
       const oldCat = exModalEditing.category;
@@ -1384,6 +1404,9 @@
       }
       const exObj = exerciseLists[oldCat][idx];
       exObj.name = name; exObj.color = color; exObj.isometric = isometric; exObj.unilateral = unilateral; exObj.hasLeverage = hasLeverage;
+      if (pattern) exObj.pattern = pattern; else delete exObj.pattern;
+      if (sa) exObj.straightArm = sa === 'yes'; else delete exObj.straightArm;
+      fillMissingPatterns();
       if (oldCat !== newCat) {
         exerciseLists[oldCat].splice(idx, 1);
         if (!exerciseLists[newCat]) exerciseLists[newCat] = [];
@@ -1412,7 +1435,8 @@
         alert('That exercise is already in the list.');
         return;
       }
-      exerciseLists[newCat].push({ name, color, isometric, unilateral, hasLeverage, createdAt: Date.now() });
+      exerciseLists[newCat].push({ name, color, isometric, unilateral, hasLeverage, pattern: pattern || undefined, straightArm: sa ? sa === 'yes' : undefined, createdAt: Date.now() });
+      fillMissingPatterns();
       saveLists();
       updateExercisePicker();
       const cb = exModalOnSaved;
@@ -1420,6 +1444,82 @@
       if (cb) cb({ name, category: newCat });
     }
   };
+
+  // ---- select several to delete (blocks, categories, equipment, exercises) ----
+  const bulk = { blocks: { on: false, sel: new Set(), ids: [] }, cats: { on: false, sel: new Set(), ids: [] }, equip: { on: false, sel: new Set(), ids: [] }, ex: { on: false, sel: new Set(), ids: [] } };
+  const BULK_UI = {
+    blocks: { list: 'blockEditList', btn: 'blocksSelectBtn', noun: 'block', render: () => renderBlockEditList() },
+    cats: { list: 'catEditList', btn: 'categoriesSelectBtn', noun: 'category', render: () => renderCatEditList() },
+    equip: { list: 'equipmentEditList', btn: 'equipmentSelectBtn', noun: 'equipment item', render: () => renderEquipmentEditList() },
+    ex: { list: 'allExercisesList', btn: 'exSelectBtn', noun: 'exercise', render: () => renderAllExercisesList() }
+  };
+  function bulkBar(key) {
+    let bar = document.getElementById('bulkBar-' + key);
+    if (!bar) {
+      const listEl = document.getElementById(BULK_UI[key].list);
+      bar = document.createElement('div');
+      bar.id = 'bulkBar-' + key; bar.className = 'bulk-bar hidden';
+      bar.innerHTML = '<span class="bulk-count"></span><button type="button" class="text-btn" data-bulk="all">Select all</button><button type="button" class="text-btn text-btn-danger" data-bulk="delete">Delete</button><button type="button" class="text-btn" data-bulk="done">Done</button>';
+      listEl.parentNode.insertBefore(bar, listEl);
+      bar.onclick = (e) => { const b = e.target.closest('[data-bulk]'); if (b) bulkAction(key, b.dataset.bulk); };
+    }
+    return bar;
+  }
+  function refreshBulkBar(key) {
+    const b = bulk[key], bar = bulkBar(key);
+    bar.classList.toggle('hidden', !b.on);
+    bar.querySelector('.bulk-count').textContent = b.sel.size + ' selected';
+    bar.querySelector('[data-bulk="delete"]').disabled = !b.sel.size;
+    bar.querySelector('[data-bulk="all"]').textContent = b.sel.size && b.sel.size === b.ids.length ? 'Select none' : 'Select all';
+    const btn = document.getElementById(BULK_UI[key].btn);
+    if (btn) btn.classList.toggle('on', b.on);
+  }
+  // called at the end of each list renderer: ids are the items in the order the rows were drawn
+  function decorateBulk(listEl, key, ids) {
+    const b = bulk[key];
+    b.ids = ids;
+    Array.from(b.sel).forEach(id => { if (!ids.includes(id)) b.sel.delete(id); });
+    refreshBulkBar(key);
+    if (!b.on) return;
+    Array.from(listEl.children).filter(r => r.classList.contains('edit-row')).forEach((row, i) => {
+      const id = ids[i];
+      if (id === undefined) return;
+      row.classList.add('selecting');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'bulk-cb'; cb.checked = b.sel.has(id); cb.setAttribute('aria-label', 'Select');
+      const toggle = () => { if (cb.checked) b.sel.add(id); else b.sel.delete(id); refreshBulkBar(key); };
+      cb.onchange = toggle;
+      row.onclick = (e) => { if (e.target === cb || e.target.closest('input[type="color"]')) return; cb.checked = !cb.checked; toggle(); };
+      row.insertBefore(cb, row.firstChild);
+    });
+  }
+  function toggleBulk(key) { const b = bulk[key]; b.on = !b.on; b.sel.clear(); BULK_UI[key].render(); }
+  function bulkAction(key, act) {
+    const b = bulk[key];
+    if (act === 'done') { b.on = false; b.sel.clear(); BULK_UI[key].render(); return; }
+    if (act === 'all') { if (b.sel.size === b.ids.length) b.sel.clear(); else b.ids.forEach(id => b.sel.add(id)); BULK_UI[key].render(); return; }
+    if (act !== 'delete' || !b.sel.size) return;
+    const names = Array.from(b.sel), noun = BULK_UI[key].noun;
+    let msg = `Delete ${names.length} ${noun}${names.length === 1 ? '' : 's'}?`;
+    if (key === 'cats') {
+      if (categories.length - names.length < 1) { alert('You need at least one category.'); return; }
+      msg += ` Their exercises and logged entries move to "${UNCATEGORIZED_NAME}", nothing is deleted.`;
+    } else if (key === 'blocks') msg += ' This only removes the blocks, not the exercises in them.';
+    else if (key === 'equip') msg += ' Logged entries keep showing them, but they will not be selectable anymore.';
+    else msg += ' Logged entries stay in your history.';
+    if (!confirm(msg)) return;
+    bulkQuiet = true;
+    try {
+      if (key === 'blocks') names.forEach(n => deleteBlock(n));
+      else if (key === 'cats') names.filter(n => n !== UNCATEGORIZED_NAME).forEach(n => deleteCategory(n));
+      else if (key === 'equip') names.forEach(n => deleteEquipment(n));
+      else names.forEach(id => { const i = id.indexOf('||'); deleteExercise(id.slice(i + 2), id.slice(0, i)); });
+    } finally { bulkQuiet = false; }
+    b.on = false; b.sel.clear();
+    renderCatEditList(); renderBlockEditList(); renderEquipmentEditList(); renderAllExercisesList(); renderBlockSelect();
+    showToast('Deleted ' + names.length + ' ' + noun + (names.length === 1 ? '' : 's'));
+  }
+  Object.keys(BULK_UI).forEach(k => { const btn = document.getElementById(BULK_UI[k].btn); if (btn) btn.onclick = () => toggleBulk(k); });
 
   let assigningCategory = null; // name of the category currently showing its "move exercises in" checklist, or null
   let catListSort = 'added';
@@ -1487,6 +1587,7 @@
       row.appendChild(actions);
       catEditList.appendChild(row);
     });
+    decorateBulk(catEditList, 'cats', catsInOrder);
     renderCatAssignSection();
   }
 
@@ -1652,6 +1753,7 @@
       row.appendChild(actions);
       listEl.appendChild(row);
     });
+    decorateBulk(listEl, 'ex', all.map(p => p.cat + '||' + p.exObj.name));
   }
   const exSortToggleBtn = document.getElementById('exSortToggleBtn');
   if (exSortToggleBtn) exSortToggleBtn.onclick = () => {
@@ -1693,7 +1795,7 @@
     if (entryCount > 0) moveParts.push(`${entryCount} logged entr${entryCount === 1 ? 'y' : 'ies'}`);
     let msg = `Delete "${name}"?`;
     if (moveParts.length) msg += ` Its ${moveParts.join(' and ')} will move to "${UNCATEGORIZED_NAME}" — nothing gets deleted.`;
-    if (!confirm(msg)) return;
+    if (!bulkQuiet && !confirm(msg)) return;
 
     // Exercises (and their logged history) outlive the category they were filed
     // under — deleting a category only removes the category, never the exercises.
@@ -1728,7 +1830,6 @@
     renderBlockSelect();
   }
 
-  catEditBtn.onclick = () => navigateTo('config');
   document.getElementById('addCatBtn').onclick = () => {
     const name = newCatInput.value.trim();
     if (!name) return;
@@ -1800,6 +1901,7 @@
       row.appendChild(actions);
       listEl.appendChild(row);
     });
+    decorateBulk(listEl, 'equip', inOrder);
   }
   // Per-set equipment dropdowns: fill one, or refresh all after the equipment list changes.
   function fillEquipSelect(sel, current) {
@@ -1808,7 +1910,7 @@
     sel.innerHTML = '';
     const noneOpt = document.createElement('option');
     noneOpt.value = '';
-    noneOpt.textContent = '—';
+    noneOpt.textContent = 'Equipment';
     sel.appendChild(noneOpt);
     equipmentList.forEach(name => {
       const opt = document.createElement('option');
@@ -1819,7 +1921,7 @@
     sel.value = equipmentList.includes(keep) ? keep : '';
   }
   function renderEquipmentSelect() {
-    document.querySelectorAll('#setsGrid .equip-select').forEach(sel => fillEquipSelect(sel));
+    document.querySelectorAll('#setsGrid select[id^="equip"]').forEach(sel => fillEquipSelect(sel)); // only the equipment selects (RPE, flag, variation and chain share the class)
   }
   function renameEquipment(oldName) {
     const newName = prompt('Rename equipment', oldName);
@@ -1842,7 +1944,7 @@
     const usedCount = categories.reduce((n, cat) => n + (data[cat] || []).filter(e => e.equipment === name || (e.sets || []).some(s => s && typeof s === 'object' && s.equipment === name)).length, 0);
     let msg = `Delete "${name}"?`;
     if (usedCount > 0) msg += ` ${usedCount} already-logged entr${usedCount === 1 ? 'y' : 'ies'} will keep showing it, but it won't be selectable anymore.`;
-    if (!confirm(msg)) return;
+    if (!bulkQuiet && !confirm(msg)) return;
     equipmentList = equipmentList.filter(n => n !== name);
     delete equipmentColors[name];
     saveEquipment();
@@ -1967,12 +2069,6 @@
     for (const c of cands) { const hit = names.find(n => n.toLowerCase() === c); if (hit) return hit; }
     return null;
   }
-  // How much one logged set counts for: seconds held / reps done (weaker side if one-sided).
-  function effortOfSet(st) {
-    if (st && typeof st === 'object' && st.left !== undefined) return Math.min(Number(st.left) || 0, Number(st.right) || 0);
-    const n = Number((st && typeof st === 'object') ? st.reps : st);
-    return isNaN(n) ? 0 : n;
-  }
   function goalText(step) { return step.metric === 'hold' ? `${step.target}s × ${step.sets}` : `${step.target} reps × ${step.sets}`; }
   // Checks a step against the log: any single day with enough sets at/above the target meets it.
   function evaluateStep(step) {
@@ -1980,8 +2076,8 @@
     const byDate = {};
     categories.forEach(cat => (data[cat] || []).forEach(e => {
       if (e.exercise !== step.exercise) return;
-      const vals = (e.sets || []).map(effortOfSet);
-      if (step.metric === 'hold') (e.attempts || []).forEach(a => vals.push(Number(a) || 0));
+      const vals = (e.sets || []).filter(x => !step.variation || (step.variation === '__none__' ? !setVar(x) : setVar(x) === step.variation)).map(Shared.cleanReps);
+      if (step.metric === 'hold' && !step.variation) (e.attempts || []).forEach(a => vals.push(Number(a) || 0));
       if (!vals.length) return;
       (byDate[e.date] = byDate[e.date] || []).push(...vals);
     }));
@@ -2009,7 +2105,7 @@
     const u = step.metric === 'hold' ? 's' : '';
     return { text: `Best ${ev.bestValue}${u} · ${ev.bestCount}/${step.sets} sets at ${step.target}${u}+ in a day`, met: false };
   }
-  function skillToday() { const d = new Date(); return toISODate(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function skillToday() { return Shared.todayISO(); }
 
   // Small hint shown while logging an exercise that is part of a skill line.
   function skillHintFor(name) {
@@ -2063,7 +2159,7 @@
     renderSkillsPage();
   }
   // Jump to the home page with this exercise selected, ready to log.
-  function goLogExercise(name) {
+  function goLogExercise(name, variation) {
     if (!categories.some(c => (exerciseLists[c] || []).some(e => e.name === name))) { showToast("That exercise isn't in your library any more"); return; }
     active = exerciseCategoryFor(name);
     activeBlock = null;
@@ -2073,6 +2169,7 @@
     renderTabs();
     renderBlockSelect();
     updateExercisePicker();
+    if (variation) { for (let i = 1; i <= numSets; i++) { const sel = document.getElementById('var' + i); if (sel && Array.from(sel.options).some(o => o.value === variation)) sel.value = variation; } }
     renderModifiers();
     navigateTo('home');
   }
@@ -2125,7 +2222,7 @@
       titleEl.textContent = step.name;
       const goalEl = document.createElement('div');
       goalEl.className = 'skill-step-goal';
-      goalEl.textContent = `Goal: ${goalText(step)}` + (step.exercise ? ` · ${step.exercise}` : '');
+      goalEl.textContent = `Goal: ${goalText(step)}` + (step.exercise ? ` · ${step.exercise}${step.variation ? ' · ' + (step.variation === '__none__' ? 'Standard' : step.variation) : ''}` : '');
       const statusEl = document.createElement('div');
       statusEl.className = 'skill-step-status' + (st.met ? ' met' : '');
       statusEl.textContent = st.text;
@@ -2133,7 +2230,7 @@
       const actions = document.createElement('div');
       actions.className = 'skill-step-actions';
       if (ev.met) actions.appendChild(skillTextBtn('Mark done & move up', () => setStepDone(line, step, true), true));
-      if (step.exercise) actions.appendChild(skillTextBtn('Log it', () => goLogExercise(step.exercise), !ev.met));
+      if (step.exercise) actions.appendChild(skillTextBtn('Log it', () => goLogExercise(step.exercise, step.variation), !ev.met));
       if (!ev.met) actions.appendChild(skillTextBtn('Mark done', () => setStepDone(line, step, true)));
       main.appendChild(actions);
       row.appendChild(main);
@@ -2155,7 +2252,7 @@
     nameEl.textContent = step.name;
     const goalEl = document.createElement('div');
     goalEl.className = 'skill-step-goal';
-    goalEl.textContent = `Goal: ${goalText(step)}` + (step.exercise ? ` · ${step.exercise}` : '');
+    goalEl.textContent = `Goal: ${goalText(step)}` + (step.exercise ? ` · ${step.exercise}${step.variation ? ' · ' + (step.variation === '__none__' ? 'Standard' : step.variation) : ''}` : '');
     const statusEl = document.createElement('div');
     if (step.doneDate) {
       statusEl.className = 'skill-step-status';
@@ -2169,7 +2266,7 @@
     actions.className = 'skill-step-actions';
     if (step.doneDate) actions.appendChild(skillTextBtn('Undo', () => setStepDone(line, step, false)));
     else actions.appendChild(skillTextBtn(ev.met ? 'Mark done & move up' : 'Mark done', () => setStepDone(line, step, true), ev.met));
-    if (step.exercise && !step.doneDate) actions.appendChild(skillTextBtn('Log it', () => goLogExercise(step.exercise)));
+    if (step.exercise && !step.doneDate) actions.appendChild(skillTextBtn('Log it', () => goLogExercise(step.exercise, step.variation)));
     actions.appendChild(skillMiniBtn('<i class="fa-solid fa-pencil" aria-hidden="true"></i>', 'Edit step', () => openSkillStepModal(line.id, step.id)));
     actions.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-up" aria-hidden="true"></i>', 'Move up', () => moveSkillStep(line, i, -1), '', i === 0));
     actions.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-down" aria-hidden="true"></i>', 'Move down', () => moveSkillStep(line, i, 1), '', i === line.steps.length - 1));
@@ -2291,6 +2388,20 @@
     }
     sel.value = current || '';
   }
+  function fillSkillVariationSelect(exName, current) {
+    const sel = document.getElementById('skillStepVariation');
+    const list = exName ? exerciseVariations(exName) : [];
+    const all = current && current !== '__none__' && !list.includes(current) ? list.concat(current) : list;
+    sel.innerHTML = '';
+    const any = document.createElement('option');
+    any.value = ''; any.textContent = all.length ? 'Any variation' : 'No variations for this exercise';
+    sel.appendChild(any);
+    if (list.length) { const std = document.createElement('option'); std.value = '__none__'; std.textContent = 'Standard (no variation)'; sel.appendChild(std); }
+    all.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+    sel.value = current || '';
+    sel.disabled = !all.length;
+  }
+  document.getElementById('skillStepExercise').onchange = () => fillSkillVariationSelect(document.getElementById('skillStepExercise').value || null, null);
   function updateSkillStepMetricUI() {
     document.getElementById('skillStepTargetLabel').textContent = document.getElementById('skillStepMetric').value === 'hold' ? 'Seconds per set' : 'Reps per set';
   }
@@ -2302,6 +2413,7 @@
     document.getElementById('skillStepModalTitle').textContent = (step ? 'Edit step' : 'Add step') + ' — ' + line.name;
     document.getElementById('skillStepName').value = step ? step.name : '';
     fillSkillExerciseSelect(document.getElementById('skillStepExercise'), step ? step.exercise : null);
+    fillSkillVariationSelect(step ? step.exercise : null, step ? step.variation : null);
     document.getElementById('skillStepMetric').value = step ? step.metric : 'hold';
     document.getElementById('skillStepTarget').value = step ? step.target : 20;
     document.getElementById('skillStepSets').value = step ? step.sets : 3;
@@ -2334,6 +2446,7 @@
     const fields = {
       name,
       exercise: document.getElementById('skillStepExercise').value || null,
+      variation: document.getElementById('skillStepVariation').value || null,
       metric: document.getElementById('skillStepMetric').value === 'reps' ? 'reps' : 'hold',
       target, sets
     };
@@ -2363,6 +2476,14 @@
     renderSkillsPage();
   };
   document.getElementById('newSkillLineInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('addSkillLineBtn').click(); });
+  // A library step can name its exercise (and variation): make sure you have that exercise, and use your copy of it.
+  function templateExercise(st) {
+    if (!st.exercise) return null;
+    const lib = window.WorkoutLibrary && window.WorkoutLibrary.get();
+    const c = lib && (lib.exercises || []).find(x => exKey(x.name) === exKey(st.exercise));
+    const res = ensureExercises([c ? { name: c.name, category: c.category, isometric: c.isometric, unilateral: c.unilateral } : { name: st.exercise, category: 'Skill', isometric: st.metric === 'hold' }]);
+    return res.refs.length ? res.refs[0].name : null;
+  }
   // Adds skill lines from library templates: { name, steps: [{ name, metric, target, sets }] }
   function addSkillTemplates(templates) {
     let added = 0;
@@ -2370,7 +2491,7 @@
       if (!ex || !ex.name || skillLines.some(l => l.name.toLowerCase() === String(ex.name).toLowerCase())) return;
       const line = cleanSkillLine({
         name: ex.name,
-        steps: (ex.steps || []).map(st => ({ name: st.name, metric: st.metric, target: st.target, sets: st.sets, exercise: guessExerciseForStep(ex.name, st.name) }))
+        steps: (ex.steps || []).map(st => ({ name: st.name, metric: st.metric, target: st.target, sets: st.sets, exercise: templateExercise(st) || guessExerciseForStep(ex.name, st.name), variation: st.variation || null }))
       });
       if (line) { skillLines.push(line); added++; }
     });
@@ -2480,6 +2601,7 @@
       row.appendChild(actions);
       listEl.appendChild(row);
     });
+    decorateBulk(listEl, 'blocks', blocksInOrder);
     renderBlockAssignSection();
   }
 
@@ -2499,7 +2621,6 @@
     const q = blockAssignSearchQuery.toLowerCase();
     let any = false;
     categories.forEach(cat => {
-      if (cat === MAIN_CATEGORY_NAME) return;
       const list = (exerciseLists[cat] || []).filter(e => !q || e.name.toLowerCase().includes(q));
       if (!list.length) return;
       any = true;
@@ -2575,6 +2696,7 @@
     planBlocks = planBlocks.map(b => b === oldName ? trimmed : b);
     blockRefs[trimmed] = blockRefs[oldName];
     delete blockRefs[oldName];
+    if (planMeta[oldName]) { planMeta[trimmed] = planMeta[oldName]; delete planMeta[oldName]; savePlanMeta(); }
     if (hiddenBlocks.includes(oldName)) hiddenBlocks = hiddenBlocks.filter(n => n !== oldName).concat(trimmed);
     if (activeBlock === oldName) activeBlock = trimmed;
     if (assigningBlock === oldName) assigningBlock = trimmed;
@@ -2585,10 +2707,11 @@
   }
 
   function deleteBlock(name) {
-    if (!confirm(`Delete block "${name}"? This only removes the block, not the exercises in it.`)) return;
+    if (!bulkQuiet && !confirm(`Delete block "${name}"? This only removes the block, not the exercises in it.`)) return;
     blocks = blocks.filter(b => b !== name);
     planBlocks = planBlocks.filter(b => b !== name);
     delete blockRefs[name];
+    delete planMeta[name]; savePlanMeta();
     hiddenBlocks = hiddenBlocks.filter(n => n !== name);
     if (activeBlock === name) activeBlock = null;
     if (assigningBlock === name) assigningBlock = null;
@@ -2599,16 +2722,22 @@
   }
 
   // ---- Plans: starting a plan day builds a block from its exercises, so the picker shows only those ----
-  const exKey = n => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/tucked/g, 'tuck').replace(/s$/, '');
+  const sameExName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  const exKey = n => Shared.exKey(n);
   // items: [{ name, category, isometric, unilateral }]. Reuses an exercise you already have (matched by name),
   // otherwise adds it to the matching category. Returns the block refs and how many were new.
   function ensureExercises(items) {
     const refs = [], seen = new Set();
     let added = 0;
-    const real = categories.filter(c => c !== MAIN_CATEGORY_NAME);
+    const real = categories.slice();
     (items || []).forEach(it => {
       const key = exKey(it.name);
-      if (!key || seen.has(key) || !real.length) return;
+      if (!key || !real.length) return;
+      if (seen.has(key)) {
+        const dup = refs.find(r => exKey(r.name) === key);
+        if (dup && it.part === 'plan' && dup.part !== 'plan') { dup.sets = it.sets; dup.target = it.target; dup.part = it.part; if (it.variation) dup.variation = it.variation; }
+        return;
+      }
       seen.add(key);
       let found = null;
       for (const cat of real) {
@@ -2617,16 +2746,17 @@
       }
       if (!found) {
         const want = String(it.category || '').toLowerCase();
-        const cat = real.find(c => c.toLowerCase() === want) || real.find(c => c === 'Skill') || real[0];
+        const cat = categoryFor(want, real);
         if (!exerciseLists[cat]) exerciseLists[cat] = [];
         exerciseLists[cat].push({
           name: it.name, color: EX_COLOR_PALETTE[exerciseLists[cat].filter(e => e.color).length % EX_COLOR_PALETTE.length],
-          isometric: !!it.isometric, unilateral: !!it.unilateral, createdAt: Date.now()
+          isometric: !!it.isometric, unilateral: !!it.unilateral, pattern: it.pattern || undefined, createdAt: Date.now()
         });
         found = { name: it.name, refCategory: cat };
         added++;
       }
       if (it.variation) found.variation = it.variation;
+      if (it.target) { found.target = it.target; found.sets = it.sets; found.part = it.part; }
       refs.push(found);
     });
     if (added) { saveLists(); updateExercisePicker(); }
@@ -2656,17 +2786,99 @@
   }
 
   // ---- Variations: edit lists, and merge look-alike exercises (Wide, Archer, Pull up...) into one exercise + a variation ----
+  function addCategoryIfMissing(name) {
+    if (categories.includes(name)) return;
+    categories.push(name); exerciseLists[name] = []; data[name] = [];
+    getCategoryColor(name); saveLists(); saveData(); renderTabs();
+  }
+  // the library files core work under Core and stretches under Mobility; those categories are created when first needed
+  function categoryFor(want, real) {
+    const hit = real.find(c => c.toLowerCase() === want);
+    if (hit) return hit;
+    if (want === 'core' || want === 'mobility' || want === 'run') { const nm = want === 'core' ? 'Core' : want === 'run' ? 'Run' : 'Mobility'; addCategoryIfMissing(nm); return nm; }
+    return real.find(c => c === 'Skill') || real[0];
+  }
+  // Moves an exercise and all its logged entries to another category.
+  function refileExercise(name, from, to) {
+    const obj = (exerciseLists[from] || []).find(e => e.name === name);
+    if (!obj || from === to) return false;
+    addCategoryIfMissing(to);
+    if ((exerciseLists[to] || []).some(e => e.name.toLowerCase() === name.toLowerCase())) return false;
+    exerciseLists[from] = exerciseLists[from].filter(e => e !== obj);
+    exerciseLists[to].push(obj);
+    const moving = (data[from] || []).filter(e => sameExName(e.exercise, name));
+    moving.forEach(e => { e.updatedAt = Date.now(); }); // so other devices pick up the move
+    data[from] = (data[from] || []).filter(e => !sameExName(e.exercise, name));
+    data[to] = (data[to] || []).concat(moving);
+    blocks.forEach(b => (blockRefs[b] || []).forEach(r => { if (r.name === name && r.refCategory === from) r.refCategory = to; }));
+    if (selectedExercise === name) selectedExercise = '';
+    saveLists(); saveData(); saveBlocks();
+    return true;
+  }
+  // movement pattern of an exercise: your own choice, else the library's, else a guess from the name
+  function libPattern(name) {
+    const lib = window.WorkoutLibrary && window.WorkoutLibrary.get();
+    if (!lib || !Array.isArray(lib.exercises)) return '';
+    const k = exKey(name);
+    const hit = lib.exercises.find(c => exKey(c.name) === k || (c.aliases || []).some(a => exKey(a) === k));
+    return hit && hit.pattern ? hit.pattern : '';
+  }
+  function fillMissingPatterns() {
+    let n = 0;
+    categories.forEach(cat => (exerciseLists[cat] || []).forEach(e => {
+      if (e.pattern) return;
+      const p = libPattern(e.name) || Shared.guessPattern(e.name);
+      if (p) { e.pattern = p; n++; }
+    }));
+    if (n) saveLists();
+    return n;
+  }
+  function logRoutineEntry(name, seconds, notes) {
+    const res = ensureExercises([{ name, category: 'Mobility', isometric: true, unilateral: false, pattern: 'mobility' }]);
+    const ref = res.refs[0];
+    if (!ref) return false;
+    const cat = ref.refCategory;
+    if (!data[cat]) data[cat] = [];
+    data[cat].push({
+      id: Date.now().toString(), updatedAt: Date.now(), date: dateInput.value || skillToday(), exercise: ref.name,
+      isometric: true, unilateral: false, notes: notes || '', supersetId: null,
+      sets: [{ reps: Math.max(1, Math.round(seconds)), eccentric: null, kg: null, angle: null, equipment: null, variation: null }],
+      attempts: [], distance: null, isPR: false
+    });
+    saveData();
+    renderEntries(); renderCalendar(); updateExercisePicker();
+    showToast('Routine logged as one entry');
+    return true;
+  }
   const MERGE_UNDO_KEY = 'workout-log-premerge-v1';
+  // Entries can carry a name that has no exercise in your lists (deleted or renamed exercise). The merge tool treats those as exercises too.
+  function orphanSource(cat, name) {
+    const es = (data[cat] || []).filter(e => sameExName(e.exercise, name));
+    if (!es.length) return null;
+    return { name, color: null, isometric: !!es[0].isometric, unilateral: !!es[0].unilateral, orphan: true };
+  }
   function listExercisesForVariations() {
     const out = [];
-    categories.filter(c => c !== MAIN_CATEGORY_NAME).forEach(cat => (exerciseLists[cat] || []).forEach(e => {
+    categories.forEach(cat => (exerciseLists[cat] || []).forEach(e => {
       out.push({
-        category: cat, name: e.name, isometric: !!e.isometric, unilateral: !!e.unilateral,
+        category: cat, name: e.name, color: e.color || getCategoryColor(cat), isometric: !!e.isometric, unilateral: !!e.unilateral,
         custom: Array.isArray(e.variations) && e.variations.length ? e.variations.slice() : null,
         effective: exerciseVariations(e.name),
-        entries: (data[cat] || []).filter(x => x.exercise === e.name).length
+        entries: (data[cat] || []).filter(x => sameExName(x.exercise, e.name)).length
       });
     }));
+    const known = new Set();
+    categories.forEach(c => (exerciseLists[c] || []).forEach(e => known.add(String(e.name).trim().toLowerCase())));
+    categories.forEach(cat => {
+      const seen = new Set();
+      (data[cat] || []).forEach(e => {
+        const k = String(e.exercise || '').trim().toLowerCase();
+        if (!k || known.has(k) || seen.has(k)) return;
+        seen.add(k);
+        const o = orphanSource(cat, e.exercise);
+        out.push({ category: cat, name: e.exercise, color: getCategoryColor(cat), isometric: o.isometric, unilateral: o.unilateral, custom: null, effective: [], orphan: true, entries: (data[cat] || []).filter(x => sameExName(x.exercise, e.exercise)).length });
+      });
+    });
     return out;
   }
   function setCustomVariations(cat, name, list) {
@@ -2698,9 +2910,9 @@
   }
   // tgt: { name, category (preferred / for a new one), isometric, unilateral (only used when it has to be created) }
   function planMerge(srcCat, srcName, tgt, variation) {
-    const src = (exerciseLists[srcCat] || []).find(e => e.name === srcName);
+    const src = (exerciseLists[srcCat] || []).find(e => e.name === srcName) || orphanSource(srcCat, srcName);
     if (!src) return { ok: false, reason: 'That exercise no longer exists.' };
-    const real = categories.filter(c => c !== MAIN_CATEGORY_NAME);
+    const real = categories.slice();
     let tgtCat = null, tgtObj = null;
     for (const c of [tgt.category].concat(real)) {
       if (!c || !real.includes(c)) continue;
@@ -2713,31 +2925,33 @@
     const tgtIso = creating ? (tgt.isometric !== undefined ? !!tgt.isometric : !!src.isometric) : !!tgtObj.isometric;
     const tgtUni = creating ? (tgt.unilateral !== undefined ? !!tgt.unilateral : !!src.unilateral) : !!tgtObj.unilateral;
     const tgtName = creating ? tgt.name : tgtObj.name;
-    if (!!src.isometric !== tgtIso) {
+    if (!!src.isometric !== tgtIso && !(isDistanceExercise(srcName) && isDistanceExercise(tgtName))) {
       return { ok: false, reason: `${srcName} counts ${src.isometric ? 'seconds' : 'reps'} but ${tgtName} counts ${tgtIso ? 'seconds' : 'reps'}, so they can't share one exercise.` };
     }
-    const entries = (data[srcCat] || []).filter(e => e.exercise === srcName);
+    const entries = (data[srcCat] || []).filter(e => sameExName(e.exercise, srcName));
     const setCount = entries.reduce((n, e) => n + (e.sets || []).length, 0);
     return {
       ok: true, creating, srcCat, srcName, tgtCat, tgtName, tgtIso, tgtUni, variation: variation || null,
       entries: entries.length, sets: setCount,
-      sides: !!src.unilateral !== tgtUni ? (src.unilateral ? 'weaker side' : 'both sides') : null
+      sides: (!!src.unilateral !== tgtUni && !(variation && isOneSidedVariation(tgtName, variation))) ? (src.unilateral ? 'weaker side' : 'both sides') : null
     };
   }
   function applyMerge(srcCat, srcName, tgt, variation) {
     const p = planMerge(srcCat, srcName, tgt, variation);
     if (!p.ok) return p;
-    const src = exerciseLists[srcCat].find(e => e.name === srcName);
+    const src = (exerciseLists[srcCat] || []).find(e => e.name === srcName) || orphanSource(srcCat, srcName);
     let tgtObj = (exerciseLists[p.tgtCat] || []).find(e => e.name === p.tgtName);
     if (!tgtObj) {
       tgtObj = { name: p.tgtName, color: src.color || null, isometric: p.tgtIso, unilateral: p.tgtUni, createdAt: Date.now() };
       (exerciseLists[p.tgtCat] = exerciseLists[p.tgtCat] || []).push(tgtObj);
     }
-    const moved = (data[srcCat] || []).filter(e => e.exercise === srcName);
-    data[srcCat] = (data[srcCat] || []).filter(e => e.exercise !== srcName);
+    const moved = (data[srcCat] || []).filter(e => sameExName(e.exercise, srcName));
+    data[srcCat] = (data[srcCat] || []).filter(e => !sameExName(e.exercise, srcName));
     if (!data[p.tgtCat]) data[p.tgtCat] = [];
     moved.forEach(e => {
       e.exercise = tgtObj.name; e.isometric = !!tgtObj.isometric; e.unilateral = !!tgtObj.unilateral;
+      e.updatedAt = Date.now(); // so other devices pick up the merge
+      if (variation && e.distance != null && !(e.sets && e.sets.length) && !e.variation) e.variation = variation; // runs have no sets, so the variation sits on the entry
       (e.sets || []).forEach(s => {
         if (!s || typeof s !== 'object') return;
         if (variation && !s.variation) s.variation = variation;
@@ -2754,10 +2968,12 @@
         .filter(r => { const k = r.refCategory + '|' + r.name; if (seen.has(k)) return false; seen.add(k); return true; });
     });
     skillLines.forEach(l => (l.steps || []).forEach(st => { if (st.exercise === srcName) st.exercise = tgtObj.name; }));
-    exerciseLists[srcCat] = exerciseLists[srcCat].filter(e => e !== src);
+    exerciseLists[srcCat] = (exerciseLists[srcCat] || []).filter(e => e !== src);
+    if (srcName.toLowerCase() !== tgtObj.name.toLowerCase()) markExerciseRemoved(srcName);
     delete exerciseDrafts[srcName];
     if (selectedExercise === srcName) { selectedExercise = ''; switchExerciseInputs('', ''); }
     if (variation && !exerciseVariations(tgtObj.name).includes(variation)) tgtObj.variations = exerciseVariations(tgtObj.name).concat(variation);
+    recalcPRs(tgtObj.name);
     saveData(); saveLists(); saveBlocks(); saveSkills();
     renderBlockSelect(); updateExercisePicker(); renderModifiers(); render();
     return Object.assign({}, p, { moved: moved.length });
@@ -2767,7 +2983,8 @@
     if (!gone.length) return;
     blocks = blocks.filter(b => !gone.includes(b));
     planBlocks = planBlocks.filter(b => !gone.includes(b));
-    gone.forEach(n => { delete blockRefs[n]; });
+    gone.forEach(n => { delete blockRefs[n]; delete planMeta[n]; });
+    savePlanMeta();
     hiddenBlocks = hiddenBlocks.filter(h => !gone.includes(h));
     if (gone.includes(activeBlock)) activeBlock = null;
     saveBlocks();
@@ -2807,6 +3024,99 @@
     return list;
   }
 
+  // ---- Last time: what you did last on this exercise (and variation), shown as placeholder text and a line above the sets ----
+  function shortDate(iso) { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? iso : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  function lastSessionFor(name, variation) {
+    let best = null;
+    categories.forEach(cat => (data[cat] || []).forEach(e => {
+      if (e.exercise !== name || !Array.isArray(e.sets)) return;
+      const key = entryKey(e);
+      if (best && key <= best.key) return;
+      const sets = e.sets.filter(st => st && typeof st === 'object' && (variation === undefined || setVar(st) === variation));
+      if (sets.length) best = { key, e, sets };
+    }));
+    return best;
+  }
+  function lastAttemptsFor(name) {
+    let best = null;
+    categories.forEach(cat => (data[cat] || []).forEach(e => {
+      if (e.exercise !== name || !Array.isArray(e.attempts) || !e.attempts.length) return;
+      const key = entryKey(e);
+      if (!best || key > best.key) best = { key, e };
+    }));
+    return best ? best.e.attempts : null;
+  }
+  function lastDistanceFor(name, variation) {
+    let best = null;
+    categories.forEach(cat => (data[cat] || []).forEach(e => {
+      if (e.exercise !== name || e.distance == null || (variation !== undefined && (e.variation || '') !== variation)) return;
+      const key = entryKey(e);
+      if (!best || key > best.key) best = { key, e };
+    }));
+    return best ? best.e : null;
+  }
+  function setBrief(st, iso) {
+    const u = iso ? 's' : '';
+    const val = st.left !== undefined ? `${st.left}/${st.right}${u}` : `${st.reps}${u}`;
+    const kg = st.kg != null && st.kg !== '' && Number(st.kg) !== 0 ? ' ' + formatLoadKg(st.kg) : '';
+    return val + kg;
+  }
+  function lastTimeText(name) {
+    if (!name || !showLast) return '';
+    if (isDistanceExercise(name)) {
+      const dv = (document.getElementById('distVarSelect') || {}).value;
+      const d = lastDistanceFor(name, dv || undefined);
+      if (!d) return '';
+      return `Last time (${shortDate(d.date)}): ${round2(kmToDisplay(d.distance))}${distanceUnitLabel()}` + (d.timeMinutes != null ? ' · ' + formatDuration(d.timeMinutes) : '');
+    }
+    if (isIsometricExercise(name) && holdMode === 'attempts') {
+      const a = lastAttemptsFor(name);
+      return a ? `Last attempts: ${a.join('s, ')}s` : '';
+    }
+    const hasVars = exerciseVariations(name).length > 0;
+    const v = hasVars ? ((document.getElementById('var1') || {}).value || '') : undefined;
+    const ses = lastSessionFor(name, v);
+    if (!ses) return '';
+    return `Last time (${shortDate(ses.e.date)})${v ? ' · ' + v : ''}: ` + ses.sets.map(st => setBrief(st, !!ses.e.isometric)).join(' · ');
+  }
+  function applyLastTimePlaceholders(name) {
+    if (!name) return;
+    if (!showLast) { resetEccPlaceholders(); return; }
+    const hasVars = exerciseVariations(name).length > 0;
+    const cache = {}, used = {};
+    for (let i = 1; i <= numSets; i++) {
+      const v = hasVars ? ((document.getElementById('var' + i) || {}).value || '') : undefined;
+      const k = v === undefined ? '*' : v;
+      if (!(k in cache)) cache[k] = lastSessionFor(name, v);
+      const ses = cache[k];
+      const ord = used[k] || 0; used[k] = ord + 1;
+      if (!ses || !ses.sets.length) continue;
+      const st = ses.sets[ord] || ses.sets[ses.sets.length - 1];
+      const el = id => document.getElementById(id + i);
+      const lr = el('lr');
+      if (lr && !lr.classList.contains('hidden')) {
+        el('left').placeholder = String(st.left !== undefined ? st.left : st.reps);
+        el('right').placeholder = String(st.right !== undefined ? st.right : st.reps);
+      } else if (el('set')) {
+        el('set').placeholder = String(st.left !== undefined ? Math.min(Number(st.left) || 0, Number(st.right) || 0) : st.reps);
+      }
+      if (st.eccentric != null && el('ecc')) el('ecc').placeholder = String(st.eccentric);
+      if (st.kg != null && st.kg !== '' && el('kg')) el('kg').placeholder = String(round2(kgToDisplay(Number(st.kg))));
+    }
+  }
+  function fillDistVarSelect(name) {
+    const sel = document.getElementById('distVarSelect'), row = document.getElementById('distVarRow');
+    if (!sel || !row) return;
+    const list = name ? exerciseVariations(name) : [];
+    row.classList.toggle('hidden', !list.length);
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">Variation</option>';
+    list.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+    sel.value = list.includes(keep) ? keep : '';
+  }
+  (function () { const sel = document.getElementById('distVarSelect'); if (sel) sel.addEventListener('change', () => renderModifiers()); })();
+  function isSAName(name) { const o = findExerciseOwner(name); return Shared.isStraightArm(o && o.exObj, name); }
+  function allEntriesFlat() { const out = []; categories.forEach(c => (data[c] || []).forEach(e => out.push(e))); return out; }
   function renderModifiers() {
     const name = currentExerciseName();
     modifiersRow.innerHTML = '';
@@ -2819,7 +3129,7 @@
     }
 
     if (name && isDistanceExercise(name)) {
-      const b = computeExerciseBests(name);
+      const b = computeExerciseBests(name, exerciseVariations(name).length ? ((document.getElementById('distVarSelect') || {}).value || '') : undefined);
       const addTag = html => { const tag = document.createElement('span'); tag.className = 'modifier'; tag.innerHTML = html; modifiersRow.appendChild(tag); };
       if (b.bestDistance !== null) addTag(`<i class="fa-solid fa-trophy" aria-hidden="true"></i> Longest: ${round2(kmToDisplay(b.bestDistance))}${distanceUnitLabel()}`);
       if (b.bestTime !== null) addTag(`<i class="fa-solid fa-trophy" aria-hidden="true"></i> Longest time: ${formatDuration(b.bestTime)}`);
@@ -2844,6 +3154,27 @@
       if (b.bestE1RM !== null) addTag(`<i class="fa-solid fa-trophy" aria-hidden="true"></i> Est. 1RM${vl}: ${round2(kgToDisplay(b.bestE1RM))}${weightUnitLabel()}`);
     }
 
+    const lastText = lastTimeText(name);
+    if (lastText) {
+      const tag = document.createElement('span');
+      tag.className = 'modifier';
+      tag.innerHTML = '<i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> ';
+      tag.appendChild(document.createTextNode(lastText));
+      modifiersRow.appendChild(tag);
+    }
+
+    if (name && isSAName(name)) {
+      const rep = Shared.straightArmReport(allEntriesFlat(), isSAName, weekStart, skillToday());
+      const warn = rep.flags.find(f => f[0] === 'warn');
+      if (warn) {
+        const tag = document.createElement('span');
+        tag.className = 'modifier';
+        tag.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> ';
+        tag.appendChild(document.createTextNode(warn[1].split('. ')[0] + '.'));
+        modifiersRow.appendChild(tag);
+      }
+    }
+
     const skillHint = skillHintFor(name);
     if (skillHint) {
       const tag = document.createElement('span');
@@ -2858,6 +3189,7 @@
 
   function updateMetricsSection(name) {
     const holdModeToggleBtn = document.getElementById('holdModeToggleBtn');
+    if (window.WorkoutApp && window.WorkoutApp.onMetricsUpdate) window.WorkoutApp.onMetricsUpdate({ isometric: !!name && isIsometricExercise(name) && !isDistanceExercise(name), distance: isDistanceExercise(name) });
     if (isDistanceExercise(name)) {
       metricsLabel.textContent = 'Distance, elevation & time';
       document.getElementById('setsWrap').classList.add('hidden');
@@ -2867,6 +3199,14 @@
       document.getElementById('distanceInputLabel').textContent = 'Distance (' + distanceUnitLabel().toUpperCase() + ')';
       document.getElementById('ruckKgInputLabel').textContent = 'Rucking (' + weightUnitLabel() + ')';
       document.getElementById('elevationInputLabel').textContent = 'Elevation (' + elevationUnitLabel() + ')';
+      fillDistVarSelect(name);
+      const dvSel = (document.getElementById('distVarSelect') || {}).value;
+      const ld = name && showLast ? lastDistanceFor(name, dvSel || undefined) : null;
+      if (name && !dvSel && ld && ld.variation && exerciseVariations(name).includes(ld.variation)) document.getElementById('distVarSelect').value = ld.variation;
+      distanceInput.placeholder = ld && ld.distance != null ? String(round2(kmToDisplay(ld.distance))) : '0.0';
+      document.getElementById('timeInput').placeholder = ld && ld.timeMinutes != null ? timeMinutesToInputString(ld.timeMinutes) : '0:00';
+      document.getElementById('ruckKgInput').placeholder = ld && ld.ruckKg != null ? String(round2(kgToDisplay(ld.ruckKg))) : '0';
+      document.getElementById('elevationInput').placeholder = ld && ld.elevation != null ? String(round2(mToDisplay(ld.elevation))) : '0';
       return;
     }
     distanceRow.classList.add('hidden');
@@ -2883,6 +3223,8 @@
 
     if (showAttempts) {
       metricsLabel.textContent = 'Attempts (sec)';
+      const la = name && showLast ? lastAttemptsFor(name) : null;
+      for (let i = 1; i <= numAttempts; i++) { const el = document.getElementById('attempt' + i); if (el) el.placeholder = la && la[i - 1] != null ? String(la[i - 1]) : 'sec'; }
       return;
     }
 
@@ -2897,6 +3239,7 @@
     setsGrid.querySelectorAll('.angle-field').forEach(f => f.classList.toggle('hidden', !leverage));
     const varList = exerciseVariations(name);
     setsGrid.querySelectorAll('.variation-field').forEach(f => f.classList.toggle('hidden', !varList.length));
+    setsGrid.querySelectorAll('.chain-field').forEach(f => f.classList.toggle('hidden', !varList.length)); // chaining is for exercises with variations
     setsGrid.querySelectorAll('.var-select').forEach(sel => fillVarSelect(sel));
     for (let i = 1; i <= numSets; i++) {
       const primary = document.getElementById('set' + i);
@@ -2908,7 +3251,7 @@
       const primaryLabel = document.querySelector('label[for="set' + i + '"]');
       if (primaryLabel) primaryLabel.textContent = isometric ? 'Isometric' : 'Reps';
       if (!primary || !lr) continue;
-      if (unilateral) {
+      if (unilateral || setIsUni(name, i)) {
         primary.classList.add('hidden');
         lr.classList.remove('hidden');
         left.placeholder = 'L ' + unit;
@@ -2919,6 +3262,7 @@
         primary.placeholder = unit;
       }
     }
+  applyLastTimePlaceholders(name);
   }
 
   let draggedExerciseName = null;
@@ -2940,28 +3284,90 @@
     showToast('Exercise order updated');
   }
 
+  function targetText(ref) {
+    if (!ref || !ref.target) return '';
+    const t = String(ref.target).replace(/\s*reps?\b/i, '').trim();
+    return ref.sets > 1 ? ref.sets + ' × ' + t : t;
+  }
+  function namesLoggedOn(date) {
+    const set = new Set();
+    categories.forEach(cat => (data[cat] || []).forEach(e => { if (e.date === date) set.add(e.exercise); }));
+    return set;
+  }
+  function recordPlanSession(pm, date) {
+    if (!pm.uid || !pm.weeks) return;
+    const p = planProgress[pm.uid] || (planProgress[pm.uid] = { started: date, sessions: [] });
+    const day = pm.dayIdx == null ? 0 : pm.dayIdx;
+    if (p.sessions.some(x => x.date === date && x.day === day)) return;
+    p.sessions.push({ date, day });
+    p.sessions.sort((a, b) => a.date.localeCompare(b.date));
+    p.started = p.sessions[0].date;
+    savePlanProgress();
+  }
+  function renderPlanStrip() {
+    const el = document.getElementById('planStrip');
+    if (!el) return;
+    const pm = activeBlock ? planMeta[activeBlock] : null;
+    if (!pm || !planBlocks.includes(activeBlock)) { el.classList.add('hidden'); return; }
+    const refs = blockRefs[activeBlock] || [];
+    const date = dateInput.value;
+    const done = namesLoggedOn(date);
+    const doneCount = refs.filter(r => done.has(r.name)).length;
+    const names = pm.dayNames || [];
+    const dayName = pm.dayIdx != null && names[pm.dayIdx] ? names[pm.dayIdx] : '';
+    let html = `<div class="plan-title">${escapeHtml(pm.name)}${dayName ? ' · ' + escapeHtml(dayName) : ''}</div>`;
+    if (pm.weeks) {
+      const p = planProgress[pm.uid] || { sessions: [] };
+      const dpw = pm.dpw || names.length || 1, total = pm.weeks * dpw;
+      const dayIdx = pm.dayIdx == null ? 0 : pm.dayIdx;
+      const at = p.sessions.findIndex(x => x.date === date && x.day === dayIdx);
+      const idx = at >= 0 ? at : p.sessions.length;
+      if (idx >= total) {
+        html += `<div class="plan-line">Programme complete (${p.sessions.length} sessions). Next: take a deload week, then move up a level.</div>`;
+      } else {
+        const week = Math.floor(idx / dpw) + 1;
+        html += `<div class="plan-line">Week ${week} of ${pm.weeks} · session ${idx + 1} of ${total}</div>`;
+        if (idx + 1 >= total) html += '<div class="plan-line">Next: this is the last session of the programme.</div>';
+        else {
+          const nextDay = names.length ? names[(dayIdx + 1) % names.length] : 'next session';
+          const nextWeek = Math.floor((idx + 1) / dpw) + 1;
+          html += `<div class="plan-line">Next: ${escapeHtml(nextDay)}${nextWeek > week ? ` · starts week ${nextWeek}, so apply the progression` : ''}</div>`;
+        }
+      }
+    }
+    if (refs.length) html += `<div class="plan-line">${doneCount} of ${refs.length} exercises done${doneCount === refs.length ? ' · session complete 🎉' : ''}</div>`;
+    if (pm.progression) html += `<details class="plan-note"><summary>Progression</summary><p>${escapeHtml(pm.progression)}</p></details>`;
+    el.innerHTML = html;
+    el.classList.remove('hidden');
+  }
   function updateExercisePicker() {
-    const isAggregator = !!activeBlock || active === MAIN_CATEGORY_NAME;
+    const inBlock = !!activeBlock;
     const list = sortedExerciseList();
     if (!list.some(pair => pair.exObj.name === selectedExercise)) selectedExercise = "";
     exerciseGrid.innerHTML = '';
     if (list.length) {
       exerciseGrid.classList.remove('hidden');
       exerciseText.classList.add('hidden');
+      const pending = [];
+      const doneNames = activeBlock ? namesLoggedOn(dateInput.value) : new Set();
+      const planRefs = activeBlock ? (blockRefs[activeBlock] || []) : [];
       list.forEach(({ exObj, originCategory }) => {
         ensureExerciseColor(originCategory, exObj);
+        const ref = planRefs.find(r => r.name === exObj.name);
+        const tgt = targetText(ref);
+        const done = !!activeBlock && doneNames.has(exObj.name);
         const wrap = document.createElement('div');
         wrap.className = 'ex-btn-wrap';
         const b = document.createElement('button');
-        b.className = 'ex-btn' + (exObj.name === selectedExercise ? ' selected' : '') + (activeSuperset && supersetMembers.has(exObj.name) ? ' ss-member' : '');
+        b.className = 'ex-btn' + (exObj.name === selectedExercise ? ' selected' : '') + (activeSuperset && supersetMembers.has(exObj.name) ? ' ss-member' : '') + (done ? ' ex-done' : '');
         b.type = 'button';
-        b.innerHTML = `<span class="dot" style="background:${exObj.color}"></span><span>${escapeHtml(exObj.name)}</span>` +
+        b.innerHTML = `${done ? '<i class="fa-solid fa-circle-check ex-done-ic" aria-hidden="true"></i>' : `<span class="dot" style="background:${exObj.color}"></span>`}<span>${escapeHtml(exObj.name)}</span>${tgt ? `<span class="iso-tag target-tag">${escapeHtml(tgt)}</span>` : ''}` +
           (isDistanceExercise(exObj.name)
             ? '<span class="iso-tag attr-tag">KM</span>'
             : (exObj.isometric ? '<span class="iso-tag attr-tag">ISO</span>' : '') +
               `<span class="iso-tag attr-tag${exObj.unilateral ? '' : ' attr-tag-muted'}">${exObj.unilateral ? 'UNI' : 'BI'}</span>` +
               (exObj.hasLeverage ? '<span class="iso-tag attr-tag">LEV</span>' : '')) +
-          ((isAggregator) ? `<span class="iso-tag origin-tag" style="background:${getCategoryColor(originCategory)}">${escapeHtml(originCategory)}</span>` : '');
+          ((inBlock) ? `<span class="iso-tag origin-tag" style="background:${getCategoryColor(originCategory)}">${escapeHtml(originCategory)}</span>` : '');
         b.onclick = () => {
           if (exEditMode) return; // dragging takes over the click while editing
           const prevExercise = selectedExercise;
@@ -3005,48 +3411,46 @@
           const del = document.createElement('button');
           del.className = 'ex-del';
           del.innerHTML = '&times;';
-          del.setAttribute('aria-label', activeBlock ? 'Remove from block' : (isAggregator ? 'Remove from Main workout' : 'Delete exercise'));
+          del.setAttribute('aria-label', activeBlock ? 'Remove from block' : 'Delete exercise');
           del.onclick = (e) => {
             e.stopPropagation();
             if (activeBlock) removeFromBlock(activeBlock, exObj.name);
-            else if (isAggregator) removeFromMainWorkout(exObj.name, originCategory);
             else deleteExercise(exObj.name, originCategory);
           };
           wrap.appendChild(del);
         }
-        exerciseGrid.appendChild(wrap);
+        pending.push({ wrap, w: exObj.name.length * 8.5 + 70 + (inBlock ? originCategory.length * 6.5 + 16 : 0) + (tgt ? tgt.length * 6.5 + 14 : 0) });
       });
+      // side by side, in 3 rows: each button goes to the row that is shortest so far; the block scrolls sideways
+      const rows = [0, 1, 2].map(() => { const r = document.createElement('div'); r.className = 'ex-row'; r._w = 0; return r; });
+      pending.forEach(p => { const r = rows.reduce((a, b) => (b._w < a._w ? b : a)); r.appendChild(p.wrap); r._w += p.w + 8; });
+      rows.forEach(r => { if (r.children.length) exerciseGrid.appendChild(r); });
       saveLists();
     } else {
       exerciseGrid.classList.add('hidden');
       exerciseText.classList.remove('hidden');
     }
     if (exEditMode) renderExEditList();
+    renderPlanStrip();
     renderModifiers();
   }
 
   function renderExEditList() {
     exEditList.innerHTML = '';
-    const isAggregator = !!activeBlock || active === MAIN_CATEGORY_NAME;
-    document.getElementById('addExInline').classList.toggle('hidden', isAggregator);
+    const inBlock = !!activeBlock;
+    document.getElementById('addExInline').classList.toggle('hidden', inBlock);
     const list = getDisplayExerciseList();
-    if (isAggregator) {
+    if (inBlock) {
       const note = document.createElement('div');
       note.className = 'empty';
       note.style.padding = '0 0 8px';
-      if (activeBlock) {
-        note.textContent = list.length
-          ? 'Drag to reorder. Removing one only unlists it from this block — it stays in its real category.'
-          : `Nothing assigned to "${activeBlock}" yet — use the Block panel above (pencil icon) to assign exercises.`;
-      } else {
-        note.textContent = list.length
-          ? 'Drag to reorder. Removing one only unlists it here — it stays in its real category.'
-          : 'Nothing chosen yet — use the picker below to add exercises from your other categories.';
-      }
+      note.textContent = list.length
+        ? 'Drag to reorder. Removing one only unlists it from this block — it stays in its real category.'
+        : `Nothing assigned to "${activeBlock}" yet — use the Block panel above (pencil icon) to assign exercises.`;
       exEditList.appendChild(note);
     }
     if (list.length === 0) {
-      if (!isAggregator) exEditList.innerHTML = '<div class="empty" style="padding:4px 0;">No exercises in this category yet.</div>';
+      if (!inBlock) exEditList.innerHTML = '<div class="empty" style="padding:4px 0;">No exercises in this category yet.</div>';
     } else {
       list.forEach(({ exObj, originCategory }) => {
         ensureExerciseColor(originCategory, exObj);
@@ -3060,7 +3464,7 @@
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'name';
-        nameSpan.textContent = exObj.name + (isAggregator ? ` (${originCategory})` : '');
+        nameSpan.textContent = exObj.name + (inBlock ? ` (${originCategory})` : '');
 
         const isoBtn = document.createElement('button');
         isoBtn.className = 'iso-toggle' + (exObj.isometric ? ' on' : '');
@@ -3097,7 +3501,6 @@
         delBtn.onclick = (e) => {
           e.stopPropagation();
           if (activeBlock) removeFromBlock(activeBlock, exObj.name);
-          else if (isAggregator) removeFromMainWorkout(exObj.name, originCategory);
           else deleteExercise(exObj.name, originCategory);
         };
         actions.appendChild(delBtn);
@@ -3108,77 +3511,13 @@
         exEditList.appendChild(row);
       });
     }
-
-    if (active === MAIN_CATEGORY_NAME && !activeBlock) populateExistingExSelect();
-  }
-
-  // ---- "Choose exercises to show in Main workout" picker (multi-select checklist) ----
-  function populateExistingExSelect() {
-    const listEl = document.getElementById('existingExChecklist');
-    if (!listEl) return;
-    listEl.innerHTML = '';
-    const alreadyIncluded = new Set((exerciseLists[MAIN_CATEGORY_NAME] || []).map(r => r.name));
-    let anyAvailable = false;
-    categories.forEach(cat => {
-      if (cat === MAIN_CATEGORY_NAME) return;
-      const available = (exerciseLists[cat] || []).filter(e => !alreadyIncluded.has(e.name));
-      if (!available.length) return;
-      anyAvailable = true;
-      const group = document.createElement('div');
-      group.className = 'existing-ex-group';
-      const groupLabel = document.createElement('div');
-      groupLabel.className = 'existing-ex-group-label';
-      groupLabel.textContent = cat;
-      group.appendChild(groupLabel);
-      available.forEach(e => {
-        const row = document.createElement('label');
-        row.className = 'existing-ex-row';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.dataset.name = e.name;
-        cb.dataset.cat = cat;
-        row.appendChild(cb);
-        row.appendChild(document.createTextNode(e.name));
-        group.appendChild(row);
-      });
-      listEl.appendChild(group);
-    });
-    document.getElementById('addExistingInline').classList.toggle('hidden', !anyAvailable);
-  }
-  const addExistingBtnEl = document.getElementById('addExistingBtn');
-  if (addExistingBtnEl) {
-    addExistingBtnEl.onclick = () => {
-      const checked = document.querySelectorAll('#existingExChecklist input[type="checkbox"]:checked');
-      if (!checked.length) return;
-      if (!exerciseLists[MAIN_CATEGORY_NAME]) exerciseLists[MAIN_CATEGORY_NAME] = [];
-      let addedCount = 0;
-      checked.forEach(cb => {
-        const name = cb.dataset.name, cat = cb.dataset.cat;
-        if (!exerciseLists[MAIN_CATEGORY_NAME].some(r => r.name === name)) {
-          exerciseLists[MAIN_CATEGORY_NAME].push({ name, refCategory: cat });
-          addedCount++;
-        }
-      });
-      saveLists();
-      updateExercisePicker();
-      showToast(addedCount === 1 ? 'Added 1 exercise' : `Added ${addedCount} exercises`);
-    };
   }
 
   function deleteExercise(name, category) {
     const cat = category || active;
-    if (!confirm(`Remove "${name}" from ${cat}?`)) return;
+    if (!bulkQuiet && !confirm(`Remove "${name}" from ${cat}?`)) return;
     exerciseLists[cat] = (exerciseLists[cat] || []).filter(e => e.name !== name);
-    if (selectedExercise === name) selectedExercise = "";
-    saveLists();
-    updateExercisePicker();
-  }
-
-  // Unlists an exercise from Main workout's curated view only — the exercise
-  // itself keeps existing in its real category.
-  function removeFromMainWorkout(name, category) {
-    if (!confirm(`Remove "${name}" from Main workout? It will stay in ${category}.`)) return;
-    exerciseLists[MAIN_CATEGORY_NAME] = (exerciseLists[MAIN_CATEGORY_NAME] || []).filter(r => r.name !== name);
+    markExerciseRemoved(name);
     if (selectedExercise === name) selectedExercise = "";
     saveLists();
     updateExercisePicker();
@@ -3298,7 +3637,6 @@
   wireCollapse('blocksCollapseBtn', 'blocksSectionBody');
   wireCollapse('categoriesCollapseBtn', 'categoriesSectionBody');
   wireCollapse('equipmentCollapseBtn', 'equipmentSectionBody');
-  wireCollapse('bodyweightCollapseBtn', 'bodyweightSectionBody');
 
   // ---- Search within the Exercises list itself (config page) ----
   let allExSearchQuery = "";
@@ -3334,7 +3672,7 @@
     newExUniBtn.classList.toggle('on', newExUnilateral);
   };
   document.getElementById('addExBtn').onclick = () => {
-    if (active === MAIN_CATEGORY_NAME || activeBlock) return; // exercises must be added to a real category
+    if (activeBlock) return; // exercises are added to a category, not to a block
     const name = newExInput.value.trim();
     if (!name) return;
     if (!exerciseLists[active]) exerciseLists[active] = [];
@@ -3371,11 +3709,22 @@
       if (equipEl) equipEl.value = '';
       const varEl = document.getElementById('var' + i);
       if (varEl) varEl.value = '';
+      ['rpe', 'flag', 'chain'].forEach(p => { const x = document.getElementById(p + i); if (x) x.value = ''; });
     }
     resetEccCascade();
     resetKgCascade();
     resetEquipCascade();
     resetVarCascade();
+  }
+  // optional per-set effort (RPE), pain and form flags
+  function flagProps(i) {
+    const r = document.getElementById('rpe' + i), f = document.getElementById('flag' + i), o = {};
+    if (r && r.value) o.rpe = Number(r.value);
+    if (f && (f.value === 'pain' || f.value === 'both')) o.pain = true;
+    if (f && (f.value === 'broke' || f.value === 'both')) o.formBroke = true;
+    const c = document.getElementById('chain' + i), cf = c && c.closest('.chain-field');
+    if (c && c.value === '1' && cf && !cf.classList.contains('hidden')) o.chain = true; // continuous with the previous set
+    return o;
   }
   function readSets(name) {
     const unilateral = isUnilateralExercise(name);
@@ -3383,14 +3732,14 @@
     const sets = [];
     for (let i = 1; i <= numSets; i++) {
       const ecc = document.getElementById('ecc' + i).value;
-      const kg = document.getElementById('kg' + i).value;
+      const kg = (() => { const raw = document.getElementById('kg' + i).value; return raw !== '' && !isNaN(Number(raw)) ? String(kgFromInput(raw)) : raw; })();
       const angleEl = document.getElementById('angle' + i);
       const angle = leverage && angleEl && angleEl.value.trim() !== '' ? angleEl.value.trim() : null;
       const equipEl = document.getElementById('equip' + i);
       const equipment = equipEl && equipEl.value ? equipEl.value : null;
       const varEl = document.getElementById('var' + i);
       const variation = varEl && varEl.value ? varEl.value : null;
-      if (unilateral) {
+      if (setIsUni(name, i)) {
         const l = document.getElementById('left' + i).value;
         const r = document.getElementById('right' + i).value;
         if (l !== '' || r !== '') {
@@ -3401,12 +3750,13 @@
             kg: kg !== '' ? Number(kg) : null,
             angle,
             equipment,
-            variation
+            variation,
+            ...flagProps(i)
           });
         }
       } else {
         const val = document.getElementById('set' + i).value;
-        if (val !== '') sets.push({ reps: Number(val), eccentric: ecc !== '' ? Number(ecc) : null, kg: kg !== '' ? Number(kg) : null, angle, equipment, variation });
+        if (val !== '') sets.push({ reps: Number(val), eccentric: ecc !== '' ? Number(ecc) : null, kg: kg !== '' ? Number(kg) : null, angle, equipment, variation, ...flagProps(i) });
       }
     }
     return sets;
@@ -3450,9 +3800,7 @@
 
   // ---- Rendering: entries grouped by day ----
   function getWeekStart(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() - d.getDay()); // back up to Sunday
-    return toISODate(d.getFullYear(), d.getMonth(), d.getDate());
+    return Shared.weekStartISO(dateStr, weekStart);
   }
   function formatWeekLabel(weekStartISO) {
     const start = new Date(weekStartISO + 'T00:00:00');
@@ -3523,6 +3871,7 @@
       const distRow = document.createElement('div');
       distRow.className = 'entry-sets';
       const addPill = text => { const p = document.createElement('span'); p.className = 'set-pill'; p.textContent = text; distRow.appendChild(p); };
+      if (entry.variation) addPill(entry.variation);
       addPill(`${round2(kmToDisplay(entry.distance))} ${distanceUnitLabel()}`);
       const pace = paceForEntry(entry);
       if (pace) addPill(`${pace} /${distanceUnitLabel()}`);
@@ -3534,9 +3883,9 @@
       const setsRow = document.createElement('div');
       setsRow.className = 'entry-sets';
       const unit = entry.isometric ? 's' : '';
-      if (entry.isometric && entry.sets.length > 3) {
+      if (entry.isometric && entry.sets.length > 3 && !entry.sets.some(s => s && s.chain)) {
         // several quick hold attempts — summarize on one line instead of a pill per attempt
-        const holds = entry.sets.map(maxHoldInSet);
+        const holds = entry.sets.map(Shared.setReps);
         const best = Math.max(...holds);
         const summary = document.createElement('span');
         summary.className = 'set-pill attempts-summary';
@@ -3544,6 +3893,20 @@
         setsRow.appendChild(summary);
       } else {
         entry.sets.forEach((s, i) => {
+          if (s && typeof s === 'object' && s.chain && i > 0) return; // shown inside its chain
+          let end = i;
+          while (entry.sets[end + 1] && typeof entry.sets[end + 1] === 'object' && entry.sets[end + 1].chain) end++;
+          if (end > i) {
+            const seg = entry.sets.slice(i, end + 1);
+            const cp = document.createElement('span');
+            cp.className = 'set-pill';
+            const parts = seg.map(x => (setVar(x) || 'standard') + ' ' + (x.left !== undefined ? x.left + '/' + x.right : x.reps) + unit);
+            const total = entry.isometric ? ' · total ' + seg.reduce((a, x) => a + Shared.setReps(x), 0) + 's' : '';
+            cp.innerHTML = '<i class="fa-solid fa-link" aria-hidden="true"></i> ';
+            cp.appendChild(document.createTextNode(`Chain, sets ${i + 1}–${end + 1}: ${parts.join(' → ')}${total}`));
+            setsRow.appendChild(cp);
+            return;
+          }
           const pill = document.createElement('span');
           pill.className = 'set-pill';
           const ecc = (s && typeof s === 'object') ? s.eccentric : null;
@@ -3551,9 +3914,10 @@
           const angle = (s && typeof s === 'object') ? s.angle : null;
           const equip = (s && typeof s === 'object') ? s.equipment : null;
           const variation = setVar(s);
-          const extras = `${ecc ? ` (ecc ${ecc}s)` : ''}${kg ? ` @ ${formatLoadKg(kg)}` : ''}${angle ? ` [${angle}]` : ''}${variation ? ` · ${variation}` : ''}${equip ? ` · ${equip}` : ''}`;
+          const flagTxt = (s && typeof s === 'object') ? (s.rpe ? ` · RPE ${s.rpe}` : '') + (s.pain ? ' · pain' : '') + (s.formBroke ? ' · form broke' : '') : '';
+          const extras = `${ecc ? ` (ecc ${ecc}s)` : ''}${kg ? ` @ ${formatLoadKg(kg)}` : ''}${angle ? ` [${angle}]` : ''}${variation ? ` · ${variation}` : ''}${equip ? ` · ${equip}` : ''}${flagTxt}`;
           if (s && typeof s === 'object' && s.left !== undefined) {
-            pill.textContent = `Set ${i + 1}: L ${s.left}${unit} / R ${s.right}${unit}${extras}`;
+            pill.textContent = `Set ${i + 1}: L ${s.left}${unit} / R ${s.right}${unit}${s.left !== s.right ? ` (Δ${Math.abs((Number(s.left) || 0) - (Number(s.right) || 0))})` : ''}${extras}`;
           } else {
             const val = (typeof s === 'object') ? s.reps : s;
             const label = entry.isometric ? 's hold' : ' reps';
@@ -3704,14 +4068,14 @@
     const todayISO = toISODate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
     calGrid.innerHTML = '';
-    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
+    (weekStart === 1 ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).forEach(d => {
       const el = document.createElement('div');
       el.className = 'cal-dow';
       el.textContent = d;
       calGrid.appendChild(el);
     });
 
-    const firstDay = new Date(year, month, 1).getDay();
+    const firstDay = (new Date(year, month, 1).getDay() - weekStart + 7) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     for (let i = 0; i < firstDay; i++) {
@@ -3808,107 +4172,165 @@
     }
     return null;
   }
+  // ids of entries deleted on this device, so sync can remove them elsewhere instead of bringing them back
+  const DELETED_KEY = 'workout-log-deleted-v1';
+  let deletedEntries = {};
+  try { const dd = JSON.parse(localStorage.getItem(DELETED_KEY)); if (dd && typeof dd === 'object' && !Array.isArray(dd)) deletedEntries = dd; } catch (e) { /* none yet */ }
+  function saveDeleted() { lsSet(DELETED_KEY, JSON.stringify(deletedEntries)); }
   function deleteEntry(id) {
     if (!confirm('Delete this entry?')) return;
     const loc = findEntryLocation(id);
     if (!loc) return;
-    data[loc.category].splice(loc.index, 1);
+    const gone = data[loc.category].splice(loc.index, 1)[0];
+    deletedEntries[id] = Date.now(); saveDeleted();
     saveData();
+    if (gone) recalcPRs(gone.exercise);
     renderEntries();
     renderCalendar();
   }
 
+  let entryEditOverlay = null;
+  function ensureEntryEditOverlay() {
+    if (entryEditOverlay) return entryEditOverlay;
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay hidden';
+    ov.innerHTML = '<div class="modal-box edit-box"><div class="section-label" id="eeTitle">Edit entry</div><div id="eeBody"></div><div class="modal-actions"><button type="button" id="eeCancel">Cancel</button><button type="button" id="eeSave">Save</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.add('hidden'); });
+    ov.querySelector('#eeCancel').onclick = () => ov.classList.add('hidden');
+    entryEditOverlay = ov;
+    return ov;
+  }
   function editEntry(id) {
     const loc = findEntryLocation(id);
     if (!loc) return;
     const entry = data[loc.category][loc.index];
     if (!entry) return;
-
-    const newDate = prompt('Date (YYYY-MM-DD):', entry.date);
-    if (newDate === null) return; // cancelled entirely
-    const trimmedDate = newDate.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDate) && trimmedDate !== entry.date) {
-      entry.date = trimmedDate;
-      // a superset is a same-day grouping — moving day breaks that, so ungroup it
-      if (entry.supersetId) entry.supersetId = null;
+    const ov = ensureEntryEditOverlay();
+    const body = ov.querySelector('#eeBody');
+    const isDist = entry.distance !== undefined && entry.distance !== null;
+    const hasSets = !isDist && Array.isArray(entry.sets) && entry.sets.length > 0;
+    const hasAttempts = !isDist && !hasSets && Array.isArray(entry.attempts) && entry.attempts.length > 0;
+    const vars = exerciseVariations(entry.exercise);
+    const esc = escapeHtml;
+    const num = v => (v == null || v === '' ? '' : v);
+    const optHtml = (list, cur, blank) => {
+      const all = cur && !list.includes(cur) ? list.concat(cur) : list;
+      return `<option value="">${blank}</option>` + all.map(v => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    };
+    const rpeOpts = cur => '<option value="">RPE</option>' + [5, 6, 7, 8, 9, 10].map(n => `<option value="${n}"${Number(cur) === n ? ' selected' : ''}>${n}</option>`).join('');
+    const flagOpts = st => { const v = st.pain && st.formBroke ? 'both' : st.pain ? 'pain' : st.formBroke ? 'broke' : ''; return [['', 'Flag'], ['broke', 'Form broke'], ['pain', 'Pain'], ['both', 'Pain + form broke']].map(o => `<option value="${o[0]}"${o[0] === v ? ' selected' : ''}>${o[1]}</option>`).join(''); };
+    const setRow = (s, i) => {
+      s = (s && typeof s === 'object') ? s : { reps: s };
+      const uni = s.left !== undefined;
+      const main = uni
+        ? `<input type="number" min="0" data-f="left" value="${num(s.left)}" placeholder="L" aria-label="Left" /><input type="number" min="0" data-f="right" value="${num(s.right)}" placeholder="R" aria-label="Right" />`
+        : `<input type="number" min="0" data-f="reps" value="${num(s.reps)}" placeholder="${entry.isometric ? 'sec' : 'reps'}" aria-label="${entry.isometric ? 'Seconds' : 'Reps'}" />`;
+      return `<div class="ee-set" data-uni="${uni ? 1 : 0}"><span class="set-num">${i + 1}</span>${main}` +
+        `<input type="number" min="0" data-f="ecc" value="${num(s.eccentric)}" placeholder="ecc s" aria-label="Eccentric seconds" />` +
+        `<input type="number" step="0.5" data-f="kg" value="${s.kg == null || s.kg === '' ? '' : round2(kgToDisplay(Number(s.kg)))}" placeholder="±${weightUnitLabel()}" aria-label="Weight" />` +
+        (vars.length || s.variation ? `<select data-f="var" aria-label="Variation">${optHtml(vars, s.variation || '', 'Variation')}</select>` : '') +
+        `<select data-f="equip" aria-label="Equipment">${optHtml(equipmentList, s.equipment || '', 'Equipment')}</select><select data-f="rpe" aria-label="RPE">${rpeOpts(s.rpe)}</select><select data-f="flag" aria-label="Flag">${flagOpts(s)}</select>${i > 0 ? `<select data-f="chain" aria-label="Chain"><option value="">Chain</option><option value="1"${s.chain ? ' selected' : ''}>Chained to previous</option></select>` : ''}<button type="button" class="text-btn ee-uni" data-act="uni" title="Switch between one value and left/right">${uni ? '1 value' : 'L/R'}</button></div>`;
+    };
+    let h = `<div class="ee-field"><label for="eeDate">Date</label><input type="date" id="eeDate" value="${esc(entry.date)}" /></div>`;
+    if (isDist) {
+      h += `<div class="ee-field"><label for="eeDist">Distance (${distanceUnitLabel()})</label><input type="number" step="0.01" min="0" id="eeDist" value="${round2(kmToDisplay(entry.distance))}" /></div>` +
+        `<div class="ee-field"><label for="eeTime">Time (e.g. 2:50)</label><input type="text" id="eeTime" value="${entry.timeMinutes != null ? esc(timeMinutesToInputString(entry.timeMinutes)) : ''}" /></div>` +
+        `<div class="ee-field"><label for="eeRuck">Rucking (${weightUnitLabel()})</label><input type="number" step="0.5" min="0" id="eeRuck" value="${entry.ruckKg != null ? round2(kgToDisplay(entry.ruckKg)) : ''}" /></div>` +
+        `<div class="ee-field"><label for="eeElev">Elevation (${elevationUnitLabel()})</label><input type="number" step="1" min="0" id="eeElev" value="${entry.elevation != null ? round2(mToDisplay(entry.elevation)) : ''}" /></div>` + (vars.length || entry.variation ? `<div class="ee-field"><label for="eeDistVar">Variation</label><select id="eeDistVar">${optHtml(vars, entry.variation || '', 'None')}</select></div>` : '');
+    } else if (hasSets) {
+      h += '<div class="ee-field"><label>Sets</label><div id="eeSets">' + entry.sets.map(setRow).join('') + '</div><div class="ee-btns"><button type="button" class="text-btn" id="eeAddSet">+ Add set</button><button type="button" class="text-btn text-btn-danger" id="eeDelSet">− Remove last</button></div></div>';
+    } else if (hasAttempts) {
+      h += `<div class="ee-field"><label for="eeAttempts">Attempts (seconds, comma separated)</label><input type="text" id="eeAttempts" value="${esc(entry.attempts.join(', '))}" /></div>`;
     }
-
-    const newWeight = prompt('Weight add-on (kg) — leave blank for none:', entry.weightKg != null ? String(entry.weightKg) : '');
-    if (newWeight !== null) {
-      const trimmedW = newWeight.trim();
-      entry.weightKg = trimmedW === '' ? null : Number(trimmedW);
+    h += `<div class="ee-field"><label for="eeNotes">Notes</label><textarea id="eeNotes" rows="2">${esc(entry.notes || '')}</textarea></div>`;
+    body.innerHTML = h;
+    ov.querySelector('#eeTitle').textContent = 'Edit · ' + (entry.exercise || '');
+    const setsBox = body.querySelector('#eeSets');
+    if (setsBox) {
+      setsBox.onclick = (e) => {
+        const b = e.target.closest('[data-act="uni"]');
+        if (!b) return;
+        const row = b.closest('.ee-set');
+        const f = k => { const el = row.querySelector(`[data-f="${k}"]`); return el ? el.value : ''; };
+        let st;
+        if (row.dataset.uni === '1') { const l = f('left'), r = f('right'); st = { reps: (l === '' || r === '') ? (l || r) : Math.min(Number(l), Number(r)) }; }
+        else { const v = f('reps'); st = { left: v, right: v }; }
+        st.eccentric = f('ecc');
+        st.kg = f('kg') === '' ? null : kgFromInput(f('kg'));
+        st.variation = row.querySelector('[data-f="var"]') ? f('var') : '';
+        st.equipment = f('equip');
+        st.rpe = f('rpe') ? Number(f('rpe')) : undefined;
+        if (f('chain') === '1') st.chain = true;
+        const fv2 = f('flag'); st.pain = fv2 === 'pain' || fv2 === 'both'; st.formBroke = fv2 === 'broke' || fv2 === 'both';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = setRow(st, Array.prototype.indexOf.call(setsBox.children, row));
+        setsBox.replaceChild(tmp.firstElementChild, row);
+      };
+      body.querySelector('#eeAddSet').onclick = () => {
+        const last = setsBox.lastElementChild;
+        const proto = last && last.dataset.uni === '1' ? { left: '', right: '' } : { reps: '' };
+        const tmp = document.createElement('div');
+        tmp.innerHTML = setRow(proto, setsBox.children.length);
+        setsBox.appendChild(tmp.firstElementChild);
+      };
+      body.querySelector('#eeDelSet').onclick = () => { if (setsBox.children.length > 1) setsBox.lastElementChild.remove(); };
     }
-
-    if (entry.equipment) { // older entries only: newer ones store equipment per set
-      const newEquipment = prompt('Equipment — leave blank for none:', entry.equipment);
-      if (newEquipment !== null) entry.equipment = newEquipment.trim() || null;
-    }
-
-    if (entry.distance !== undefined && entry.distance !== null) {
-      const newDist = prompt(`Distance (${distanceUnitLabel()}):`, String(round2(kmToDisplay(entry.distance))));
-      if (newDist !== null && newDist.trim() !== '' && !isNaN(Number(newDist.trim()))) {
-        entry.distance = displayToKm(Number(newDist.trim()));
-      }
-      const newRuck = prompt(`Rucking weight (${weightUnitLabel()}) — leave blank for none:`, entry.ruckKg != null ? String(round2(kgToDisplay(entry.ruckKg))) : '');
-      if (newRuck !== null) entry.ruckKg = newRuck.trim() === '' ? null : displayToKg(Number(newRuck.trim()));
-      const newElev = prompt(`Elevation gain (${elevationUnitLabel()}) — leave blank for none:`, entry.elevation != null ? String(round2(mToDisplay(entry.elevation))) : '');
-      if (newElev !== null) entry.elevation = newElev.trim() === '' ? null : displayToM(Number(newElev.trim()));
-      const newTime = prompt('Time (e.g. "2:50" or "2.50" for 2h50m) — leave blank for none:', entry.timeMinutes != null ? timeMinutesToInputString(entry.timeMinutes) : '');
-      if (newTime !== null) entry.timeMinutes = newTime.trim() === '' ? null : parseTimeInput(newTime.trim());
-    } else if (entry.sets && entry.sets.length) {
-      const unit = entry.isometric ? 'seconds held' : 'reps';
-      if (entry.unilateral) {
-        const current = entry.sets.map(s => `${s.left}/${s.right}`).join(', ');
-        const newSetsStr = prompt(`Sets (L/R ${unit}, e.g. "8/6, 7/5"):`, current);
-        if (newSetsStr !== null) {
-          const pairs = newSetsStr.split(',').map(s => s.trim()).filter(Boolean);
-          const parsed = pairs.map((p, i) => {
-            const parts = p.split('/').map(v => Number(v.trim()));
-            const left = !isNaN(parts[0]) ? parts[0] : 0;
-            const right = !isNaN(parts[1]) ? parts[1] : left;
-            return { left, right, eccentric: (entry.sets[i] && entry.sets[i].eccentric) || null, kg: (entry.sets[i] && entry.sets[i].kg) || null, angle: (entry.sets[i] && entry.sets[i].angle) || null, equipment: (entry.sets[i] && entry.sets[i].equipment) || null, variation: (entry.sets[i] && entry.sets[i].variation) || null };
-          });
-          if (parsed.length) entry.sets = parsed;
-        }
-      } else {
-        const current = entry.sets.map(s => (typeof s === 'object' ? s.reps : s)).join(', ');
-        const newSetsStr = prompt(`Sets (${unit}, comma separated):`, current);
-        if (newSetsStr !== null) {
-          const nums = newSetsStr.split(',').map(s => s.trim()).filter(s => s !== '').map(Number).filter(n => !isNaN(n));
-          if (nums.length) {
-            entry.sets = nums.map((n, i) => ({
-              reps: n,
-              eccentric: (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i].eccentric : null,
-              kg: (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i].kg : null,
-              angle: (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i].angle : null,
-              equipment: (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i].equipment : null,
-              variation: (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i].variation : null
-            }));
+    ov.querySelector('#eeSave').onclick = () => {
+      const date = body.querySelector('#eeDate').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { alert('Pick a valid date.'); return; }
+      const val = sel => body.querySelector(sel).value.trim();
+      if (isDist) {
+        const d = val('#eeDist'); if (d !== '' && !isNaN(Number(d))) entry.distance = displayToKm(Number(d));
+        const ru = val('#eeRuck'); entry.ruckKg = ru === '' ? null : displayToKg(Number(ru));
+        const el = val('#eeElev'); entry.elevation = el === '' ? null : displayToM(Number(el));
+        const t = val('#eeTime'); entry.timeMinutes = t === '' ? null : parseTimeInput(t);
+        const dvEl = body.querySelector('#eeDistVar'); if (dvEl) entry.variation = dvEl.value || null;
+      } else if (hasSets) {
+        const sets = [];
+        Array.from(body.querySelectorAll('.ee-set')).forEach((row, i) => {
+          const f = k => { const el = row.querySelector(`[data-f="${k}"]`); return el ? el.value.trim() : ''; };
+          const old = (entry.sets[i] && typeof entry.sets[i] === 'object') ? entry.sets[i] : {};
+          const st = {};
+          if (row.dataset.uni === '1') {
+            if (f('left') === '' && f('right') === '') return;
+            st.left = Number(f('left')) || 0; st.right = Number(f('right')) || 0;
+          } else {
+            if (f('reps') === '') return;
+            st.reps = Number(f('reps'));
           }
-        }
-      }
-    } else if (entry.attempts && entry.attempts.length) {
-      const current = entry.attempts.join(', ');
-      const newAttemptsStr = prompt('Attempts (seconds held, comma separated):', current);
-      if (newAttemptsStr !== null) {
-        const nums = newAttemptsStr.split(',').map(s => s.trim()).filter(s => s !== '').map(Number).filter(n => !isNaN(n));
+          st.eccentric = f('ecc') === '' ? null : Number(f('ecc'));
+          st.kg = f('kg') === '' ? null : kgFromInput(f('kg'));
+          st.angle = old.angle || null;
+          if (f('rpe')) st.rpe = Number(f('rpe'));
+          const fv = f('flag'); if (fv === 'pain' || fv === 'both') st.pain = true; if (fv === 'broke' || fv === 'both') st.formBroke = true;
+          if (i > 0 && f('chain') === '1') st.chain = true;
+          st.equipment = f('equip') || null;
+          st.variation = row.querySelector('[data-f="var"]') ? (f('var') || null) : (old.variation || null);
+          sets.push(st);
+        });
+        if (!sets.length) { alert('Keep at least one set with a value.'); return; }
+        entry.sets = sets;
+      } else if (hasAttempts) {
+        const nums = val('#eeAttempts').split(',').map(x => x.trim()).filter(x => x !== '').map(Number).filter(n => !isNaN(n));
         if (nums.length) entry.attempts = nums;
       }
-    }
-
-    const newNotes = prompt('Notes:', entry.notes || '');
-    if (newNotes !== null) entry.notes = newNotes.trim();
-
-    saveData();
-    renderEntries();
-    renderCalendar();
-    showToast('Entry updated');
+      if (date !== entry.date) { entry.date = date; entry.supersetId = null; } // a superset is a same-day grouping
+      entry.notes = val('#eeNotes');
+      entry.updatedAt = Date.now();
+      saveData();
+      recalcPRs(entry.exercise);
+      ov.classList.add('hidden');
+      renderEntries(); renderCalendar(); renderModifiers();
+      showToast('Entry updated');
+    };
+    ov.classList.remove('hidden');
   }
 
   // ---- Add entry ----
   // Where an entry for this exercise is filed (Main workout / blocks own nothing themselves).
   function categoryForExercise(exercise) {
-    return (activeBlock || active === MAIN_CATEGORY_NAME)
+    return activeBlock
       ? ((findExerciseOwner(exercise) || {}).category || active)
       : active;
   }
@@ -3918,7 +4340,7 @@
   // Personal records are judged per variation: a 5 s straddle is compared with earlier straddles, not with a 20 s tuck.
   function isoPRHits(sets, attempts, priorBests) {
     const prHits = [];
-    const holdCandidates = sets.map(maxHoldInSet).concat(attempts.map(Number)).filter(v => v > 0);
+    const holdCandidates = sets.map(Shared.cleanReps).concat(attempts.map(Number)).filter(v => v > 0);
     if (holdCandidates.length) {
       const sessionBest = Math.max(...holdCandidates);
       if (priorBests.bestHold === null || sessionBest > priorBests.bestHold) {
@@ -3936,7 +4358,7 @@
   }
   function repPRHits(sets, priorBests, date) {
     const prHits = [];
-    const repsCandidates = sets.map(repsInSet).filter(v => v > 0);
+    const repsCandidates = sets.map(Shared.cleanReps).filter(v => v > 0);
     if (repsCandidates.length) {
       const sessionBestReps = Math.max(...repsCandidates);
       if (priorBests.bestReps === null || sessionBestReps > priorBests.bestReps) {
@@ -3965,13 +4387,52 @@
     }
     return prHits;
   }
-  function prHitsByVariation(exercise, entry, isometric) {
+  function distancePRHits(entry, priorBests) {
+    const prHits = [];
+    if (entry.distance != null && entry.distance > 0 && (priorBests.bestDistance === null || entry.distance > priorBests.bestDistance)) {
+      prHits.push(`distance ${round2(kmToDisplay(entry.distance))}${distanceUnitLabel()}` + (priorBests.bestDistance !== null ? ` (prev ${round2(kmToDisplay(priorBests.bestDistance))}${distanceUnitLabel()})` : ''));
+    }
+    if (entry.timeMinutes != null && entry.timeMinutes > 0 && (priorBests.bestTime === null || entry.timeMinutes > priorBests.bestTime)) {
+      prHits.push(`time ${formatDuration(entry.timeMinutes)}` + (priorBests.bestTime !== null ? ` (prev ${formatDuration(priorBests.bestTime)})` : ''));
+    }
+    if (entry.elevation != null && entry.elevation > 0 && (priorBests.bestElevation === null || entry.elevation > priorBests.bestElevation)) {
+      prHits.push(`elevation ${round2(mToDisplay(entry.elevation))}${elevationUnitLabel()}` + (priorBests.bestElevation !== null ? ` (prev ${round2(mToDisplay(priorBests.bestElevation))}${elevationUnitLabel()})` : ''));
+    }
+    if (entry.distance != null && entry.distance > 0 && entry.timeMinutes != null && entry.timeMinutes > 0) {
+      const pace = entry.timeMinutes / entry.distance;
+      if (priorBests.bestPaceMinPerKm === null || pace < priorBests.bestPaceMinPerKm) {
+        prHits.push(`pace ${formatPace(pace)}/km` + (priorBests.bestPaceMinPerKm !== null ? ` (prev ${formatPace(priorBests.bestPaceMinPerKm)}/km)` : ''));
+      }
+    }
+    return prHits;
+  }
+  // Re-judges the PR badge of every entry (or of one exercise) against only what was logged before it.
+  function recalcPRs(onlyName) {
+    let changed = 0;
+    categories.forEach(cat => (data[cat] || []).forEach(e => {
+      if (onlyName && e.exercise !== onlyName) return;
+      const key = entryKey(e);
+      let hits = [];
+      if (e.distance != null && e.distance !== '') hits = distancePRHits(e, computeExerciseBests(e.exercise, exerciseVariations(e.exercise).length ? (e.variation || '') : undefined, key));
+      else if ((e.sets && e.sets.length) || (e.attempts && e.attempts.length)) {
+        e.sets = e.sets || []; e.attempts = e.attempts || [];
+        hits = prHitsByVariation(e.exercise, e, !!e.isometric, key);
+      }
+      const was = !!e.isPR;
+      e.isPR = hits.length > 0;
+      if (e.isPR) e.prTypes = hits; else delete e.prTypes;
+      if (was !== e.isPR) changed++;
+    }));
+    saveData();
+    return changed;
+  }
+  function prHitsByVariation(exercise, entry, isometric, cutoffKey) {
     const keys = Array.from(new Set(entry.sets.map(setVar)));
     if (isometric && entry.attempts.length && !keys.includes('')) keys.push('');
     const out = [];
     keys.forEach(k => {
       const sets = entry.sets.filter(s => setVar(s) === k);
-      const prior = computeExerciseBests(exercise, k);
+      const prior = computeExerciseBests(exercise, k, cutoffKey);
       const hits = isometric ? isoPRHits(sets, k === '' ? entry.attempts : [], prior) : repPRHits(sets, prior, entry.date);
       hits.forEach(t => out.push(k ? `${k}: ${t}` : t));
     });
@@ -3982,6 +4443,7 @@
     const exObj = findActiveExerciseObj(exercise);
     const entry = {
       id: Date.now().toString(),
+      updatedAt: Date.now(),
       date, exercise,
       isometric: exObj ? !!exObj.isometric : false,
       unilateral: isUnilateralExercise(exercise),
@@ -3997,6 +4459,7 @@
       entry.ruckKg = ruckKgInput.value !== '' ? displayToKg(Number(ruckKgInput.value)) : null;
       entry.elevation = elevationInput.value !== '' ? displayToM(Number(elevationInput.value)) : null;
       entry.timeMinutes = timeInput.value !== '' ? parseTimeInput(timeInput.value) : null;
+      entry.variation = (document.getElementById('distVarSelect') || {}).value || null;
       entry.sets = [];
       entry.attempts = [];
     } else if (entry.isometric && holdMode === 'attempts') {
@@ -4017,23 +4480,8 @@
         showToast(`🎉 New PR: ${prHits.join(', ')}`);
       }
     } else if (isDistanceExercise(exercise)) {
-      const priorBests = computeExerciseBests(exercise);
-      const prHits = [];
-      if (entry.distance != null && entry.distance > 0 && (priorBests.bestDistance === null || entry.distance > priorBests.bestDistance)) {
-        prHits.push(`distance ${round2(kmToDisplay(entry.distance))}${distanceUnitLabel()}` + (priorBests.bestDistance !== null ? ` (prev ${round2(kmToDisplay(priorBests.bestDistance))}${distanceUnitLabel()})` : ''));
-      }
-      if (entry.timeMinutes != null && entry.timeMinutes > 0 && (priorBests.bestTime === null || entry.timeMinutes > priorBests.bestTime)) {
-        prHits.push(`time ${formatDuration(entry.timeMinutes)}` + (priorBests.bestTime !== null ? ` (prev ${formatDuration(priorBests.bestTime)})` : ''));
-      }
-      if (entry.elevation != null && entry.elevation > 0 && (priorBests.bestElevation === null || entry.elevation > priorBests.bestElevation)) {
-        prHits.push(`elevation ${round2(mToDisplay(entry.elevation))}${elevationUnitLabel()}` + (priorBests.bestElevation !== null ? ` (prev ${round2(mToDisplay(priorBests.bestElevation))}${elevationUnitLabel()})` : ''));
-      }
-      if (entry.distance != null && entry.distance > 0 && entry.timeMinutes != null && entry.timeMinutes > 0) {
-        const pace = entry.timeMinutes / entry.distance;
-        if (priorBests.bestPaceMinPerKm === null || pace < priorBests.bestPaceMinPerKm) {
-          prHits.push(`pace ${formatPace(pace)}/km` + (priorBests.bestPaceMinPerKm !== null ? ` (prev ${formatPace(priorBests.bestPaceMinPerKm)}/km)` : ''));
-        }
-      }
+      const priorBests = computeExerciseBests(exercise, exerciseVariations(exercise).length ? (entry.variation || '') : undefined);
+      const prHits = distancePRHits(entry, priorBests);
       entry.isPR = prHits.length > 0;
       if (entry.isPR) {
         entry.prTypes = prHits;
@@ -4090,6 +4538,7 @@
       data[a.cat].push(a.entry);
     });
     saveData();
+    { const pm = activeBlock ? planMeta[activeBlock] : null; if (pm && pm.uid) recordPlanSession(pm, date); }
     if (activeSuperset) { activeSuperset.count += added.length; }
     const anyPR = added.some(a => a.entry.isPR);
     if (added.length > 1 && !anyPR) showToast(`Logged ${added.length} exercises`);
@@ -4124,44 +4573,36 @@
     }));
     categories.forEach(cat => {
       const rows = (data[cat] || []).slice().sort((a, b) => a.date.localeCompare(b.date));
-      const header = ['Date', 'Exercise', 'Type', 'Left/Right', 'Weight (kg)', 'Distance (km)', 'Superset', 'Attempts (s)', 'Equipment'];
-      for (let i = 1; i <= maxSetsInData; i++) { header.push(`Set ${i} value`); header.push(`Set ${i} ecc (s)`); header.push(`Set ${i} kg`); header.push(`Set ${i} angle`); header.push(`Set ${i} equipment`); header.push(`Set ${i} variation`); }
+      const header = ['Date', 'Exercise', 'Type', 'Left/Right', 'Weight (kg)', 'Distance (km)', 'Superset', 'Attempts (s)', 'Equipment', 'Time (min)', 'Elevation (m)', 'Rucking (kg)', 'Run variation'];
+      for (let i = 1; i <= maxSetsInData; i++) { header.push(`Set ${i} value`); header.push(`Set ${i} ecc (s)`); header.push(`Set ${i} kg`); header.push(`Set ${i} angle`); header.push(`Set ${i} equipment`); header.push(`Set ${i} variation`); header.push(`Set ${i} RPE`); header.push(`Set ${i} pain / form`); header.push(`Set ${i} chained`); }
       header.push('Notes');
       const sheetData = [header];
       rows.forEach(e => {
         const sets = e.sets || [];
-        const row = [e.date, e.exercise || '', e.isometric ? 'Isometric (sec)' : 'Reps', e.unilateral ? 'Yes' : '', e.weightKg || '', e.distance || '', e.supersetId || '', (e.attempts && e.attempts.length) ? e.attempts.join(', ') : '', e.equipment || ''];
+        const row = [e.date, e.exercise || '', e.isometric ? 'Isometric (sec)' : 'Reps', e.unilateral ? 'Yes' : '', e.weightKg || '', e.distance || '', e.supersetId || '', (e.attempts && e.attempts.length) ? e.attempts.join(', ') : '', e.equipment || '', e.timeMinutes != null ? e.timeMinutes : '', e.elevation != null ? e.elevation : '', e.ruckKg != null ? e.ruckKg : '', e.variation || ''];
         for (let i = 0; i < maxSetsInData; i++) {
           const s = sets[i];
-          if (s && typeof s === 'object' && s.left !== undefined) {
-            row.push(`L${s.left}/R${s.right}`);
+          if (s && typeof s === 'object') {
+            row.push(s.left !== undefined ? `L${s.left}/R${s.right}` : (s.reps !== undefined ? s.reps : ''));
             row.push(s.eccentric !== undefined && s.eccentric !== null ? s.eccentric : '');
             row.push(s.kg !== undefined && s.kg !== null ? s.kg : '');
             row.push(s.angle || '');
             row.push(s.equipment || '');
             row.push(s.variation || '');
-          } else if (s && typeof s === 'object') {
-            row.push(s.reps !== undefined ? s.reps : '');
-            row.push(s.eccentric !== undefined && s.eccentric !== null ? s.eccentric : '');
-            row.push(s.kg !== undefined && s.kg !== null ? s.kg : '');
-            row.push(s.angle || '');
-            row.push(s.equipment || '');
-            row.push(s.variation || '');
+            row.push(s.rpe || '');
+            row.push([s.pain ? 'pain' : '', s.formBroke ? 'form broke' : ''].filter(Boolean).join(' + '));
+            row.push(s.chain ? 'yes' : '');
           } else {
             row.push(s !== undefined ? s : '');
-            row.push('');
-            row.push('');
-            row.push('');
-            row.push('');
-            row.push('');
+            for (let k = 0; k < 8; k++) row.push('');
           }
         }
         row.push(e.notes || '');
         sheetData.push(row);
       });
       const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      const cols = [{wch:12},{wch:20},{wch:14},{wch:10},{wch:8},{wch:11},{wch:14},{wch:20},{wch:12}];
-      for (let i = 0; i < maxSetsInData; i++) { cols.push({wch:6}); cols.push({wch:6}); cols.push({wch:6}); cols.push({wch:10}); cols.push({wch:12}); cols.push({wch:14}); }
+      const cols = [{wch:12},{wch:20},{wch:14},{wch:10},{wch:8},{wch:11},{wch:14},{wch:20},{wch:12},{wch:11},{wch:11},{wch:11},{wch:14}];
+      for (let i = 0; i < maxSetsInData; i++) { cols.push({wch:6}); cols.push({wch:6}); cols.push({wch:6}); cols.push({wch:10}); cols.push({wch:12}); cols.push({wch:14}); cols.push({wch:6}); cols.push({wch:14}); cols.push({wch:8}); }
       cols.push({wch:30});
       ws['!cols'] = cols;
       XLSX.utils.book_append_sheet(wb, ws, cat.substring(0, 31));
@@ -4178,8 +4619,10 @@
     menuPanel.classList.add('hidden');
   };
 
+
   function buildBackupPayload() {
     return {
+      weightsInKg: true, deleted: deletedEntries, removedExercises,
       data, lists: { categories, exercises: exerciseLists, colors: categoryColors }, layout, blocks: { names: blocks, refs: blockRefs, plans: planBlocks },
       equipment: { list: equipmentList, colors: equipmentColors },
       bodyweight: bodyweightLog,
@@ -4187,11 +4630,46 @@
       parts: Object.keys(backupParts).reduce((o, k) => { o[k] = backupParts[k].get(); return o; }, {})
     };
   }
-  const backupParts = {}; // extra data owned by the external scripts: { key: { get(), merge(incoming) } }
+  const backupParts = {};
+  const PREFS_TS = 'workout-log-prefs-ts-v1';
+  backupParts.prefs = {
+    get: () => ({ units: unitSystem, weekStart, at: Number(localStorage.getItem(PREFS_TS)) || 0 }),
+    merge: (p) => {
+      if (!p || !(p.at > (Number(localStorage.getItem(PREFS_TS)) || 0))) return; // only a more recent change from another device is applied
+      if (p.units === 'metric' || p.units === 'imperial') { unitSystem = p.units; saveUnits(unitSystem); renderUnitsToggle(); renderModifiers(); renderBodyweightList(); }
+      if (p.weekStart === 0 || p.weekStart === 1) { weekStart = p.weekStart; lsSet(Shared.WEEK_KEY, weekStart); renderWeekToggle(); renderCalendar(); renderEntries(); }
+      lsSet(PREFS_TS, p.at);
+    }
+  };
+  backupParts.planProgress = {
+    get: () => ({ meta: planMeta, progress: planProgress }),
+    merge: (inc) => {
+      if (!inc || typeof inc !== 'object') return;
+      Object.keys(inc.meta || {}).forEach(k => { if (!planMeta[k]) planMeta[k] = inc.meta[k]; });
+      Object.keys(inc.progress || {}).forEach(uid => {
+        const src = inc.progress[uid] || {};
+        const a = planProgress[uid] || (planProgress[uid] = { started: src.started, sessions: [] });
+        const seen = new Set(a.sessions.map(x => x.date + '|' + x.day));
+        (src.sessions || []).forEach(x => { if (x && x.date && !seen.has(x.date + '|' + x.day)) { a.sessions.push(x); seen.add(x.date + '|' + x.day); } });
+        a.sessions.sort((x, y) => x.date.localeCompare(y.date));
+        if (a.sessions.length) a.started = a.sessions[0].date;
+      });
+      savePlanMeta(); savePlanProgress(); renderPlanStrip();
+    }
+  }; // extra data owned by the external scripts: { key: { get(), merge(incoming) } }
 
   // Hooks used by workout-profile.js (avatar, progress photos, Drive sync).
   window.WorkoutApp = {
     buildBackupPayload: () => buildBackupPayload(),
+    categoryColor: (c) => getCategoryColor(c),
+    recalcPRs: (n) => recalcPRs(n),
+    logRoutineEntry: (n, sec, notes) => logRoutineEntry(n, sec, notes),
+    fillPatterns: () => fillMissingPatterns(),
+    registerPlanBlock: (n, m) => { planMeta[n] = m; savePlanMeta(); renderPlanStrip(); },
+    planSessions: (uid) => ((planProgress[uid] || {}).sessions || []).length,
+    metricsInfo: () => { const n = currentExerciseName(); return { isometric: !!n && isIsometricExercise(n) && !isDistanceExercise(n), distance: !!n && isDistanceExercise(n) }; },
+    refileExercise: (n, f, t) => refileExercise(n, f, t),
+    refreshAfterRefile: () => { renderBlockSelect(); updateExercisePicker(); render(); },
     importBackupText: (text, opts) => importBackupText(text, opts),
     showToast: (msg) => showToast(msg),
     registerBackupPart: (key, part) => { backupParts[key] = part; },
@@ -4267,11 +4745,10 @@
   const graphLink = document.getElementById('graphLink');
   // Hosted on a web address (https / localhost) both pages share the same saved data, so the graph simply opens
   // in this window like any other link. Only a copy opened straight from disk needs the separate-window hand-off.
-  graphLink.addEventListener('click', (e) => {
+  graphLink.addEventListener('click', () => {
     if (location.protocol !== 'file:') return;
-    e.preventDefault();
-    graphWindowRef = window.open(graphLink.href, 'workoutGraphWindow');
-    setTimeout(() => sendDataToGraphWindow(graphWindowRef), 150);
+    // opened from disk: leave the current data where the graph page looks for it, then navigate normally (same window)
+    try { localStorage.setItem('workout-graph-cache-v1', JSON.stringify({ backup: buildBackupPayload(), savedAt: Date.now() })); } catch (err) { /* ignore */ }
   });
 
   const importFileInput = document.getElementById('importFile');
@@ -4294,17 +4771,33 @@
       try {
         const parsed = JSON.parse(text);
         const incomingData = parsed.data || parsed;
+        // exercises removed on the other device: remember them, so they are not added back below
+        if (parsed.removedExercises && typeof parsed.removedExercises === 'object') {
+          Object.keys(parsed.removedExercises).forEach(k => { const t = Number(parsed.removedExercises[k]) || 0; if (t > (removedExercises[k] || 0)) removedExercises[k] = t; });
+          saveRemovedEx();
+        }
+        // an older backup has set weights as typed: treat them as the unit currently selected
+        if (!parsed.weightsInKg && unitSystem === 'imperial') {
+          Object.keys(incomingData).forEach(c => (Array.isArray(incomingData[c]) ? incomingData[c] : []).forEach(en => (en && en.sets || []).forEach(st => {
+            if (st && typeof st === 'object' && st.kg != null && st.kg !== '' && !isNaN(Number(st.kg))) st.kg = Math.round(Number(st.kg) / KG_TO_LB * 1000) / 1000;
+          })));
+        }
         if (parsed.lists && parsed.lists.categories && parsed.lists.exercises) {
           parsed.lists.categories.forEach(c => {
+            if (c === LEGACY_MAIN_CATEGORY) return;
             if (!categories.includes(c)) categories.push(c);
             if (!exerciseLists[c]) exerciseLists[c] = [];
             if (!data[c]) data[c] = [];
           });
           Object.keys(parsed.lists.exercises).forEach(c => {
+            if (c === LEGACY_MAIN_CATEGORY || !categories.includes(c)) return;
             const incomingEx = migrateList(parsed.lists.exercises[c] || []);
-            const existingNames = new Set((exerciseLists[c] || []).map(e => e.name.toLowerCase()));
             const merged = (exerciseLists[c] || []).slice();
-            incomingEx.forEach(ex => { if (!existingNames.has(ex.name.toLowerCase())) merged.push(ex); });
+            incomingEx.forEach(ex => {
+              const hit = merged.find(e => e.name.toLowerCase() === ex.name.toLowerCase());
+              if (hit) { if (Array.isArray(ex.variations) && ex.variations.length) hit.variations = Array.from(new Set((hit.variations || []).concat(ex.variations))); } // variation lists add up
+              else if (!exRemovedAfter(ex)) merged.push(ex);
+            });
             exerciseLists[c] = merged;
           });
           if (parsed.lists.colors) categoryColors = Object.assign({}, parsed.lists.colors, categoryColors);
@@ -4357,14 +4850,43 @@
           });
           saveSkills();
         }
+        // deletions travel with the backup: an entry deleted on another device is removed here too
+        if (parsed.deleted && typeof parsed.deleted === 'object') Object.keys(parsed.deleted).forEach(id => { if (!deletedEntries[id]) deletedEntries[id] = parsed.deleted[id]; });
+        const where = {};
+        categories.forEach(c => (data[c] || []).forEach(en => { where[en.id] = c; }));
+        // an entry moved to another category on the other device (merge, tidy categories) moves here too, if that copy is newer
         categories.forEach(c => {
-          if (Array.isArray(incomingData[c])) {
-            const existingIds = new Set((data[c] || []).map(en => en.id));
-            const merged = (data[c] || []).slice();
-            incomingData[c].forEach(en => { if (!existingIds.has(en.id)) merged.push(en); });
-            data[c] = merged;
-          }
+          if (!Array.isArray(incomingData[c])) return;
+          incomingData[c].forEach(en => {
+            if (!en || deletedEntries[en.id]) return;
+            const from = where[en.id];
+            if (from === undefined || from === c) return;
+            const cur = (data[from] || []).find(x => x.id === en.id);
+            if ((en.updatedAt || 0) > ((cur || {}).updatedAt || 0)) {
+              data[from] = data[from].filter(x => x.id !== en.id);
+              (data[c] = data[c] || []).push(en);
+              where[en.id] = c;
+            }
+          });
         });
+        categories.forEach(c => {
+          const merged = (data[c] || []).filter(en => !deletedEntries[en.id]);
+          if (Array.isArray(incomingData[c])) {
+            incomingData[c].forEach(en => {
+              if (!en || deletedEntries[en.id]) return;
+              if (where[en.id] === undefined) { merged.push(en); where[en.id] = c; }
+              else if (where[en.id] === c && (en.updatedAt || 0) > ((merged.find(x => x.id === en.id) || {}).updatedAt || 0)) {
+                const i = merged.findIndex(x => x.id === en.id);
+                if (i >= 0) merged[i] = en; // the copy edited more recently wins
+              }
+            });
+          }
+          data[c] = merged;
+        });
+        // exercises removed elsewhere that no longer have any entries here disappear too
+        categories.forEach(c => { exerciseLists[c] = (exerciseLists[c] || []).filter(ex => !exRemovedAfter(ex) || categories.some(cc => (data[cc] || []).some(en => en.exercise === ex.name))); });
+        saveLists();
+        saveDeleted();
         saveData();
         updateExercisePicker();
         applyLayout();
@@ -4408,6 +4930,7 @@
     return Array.from(document.querySelectorAll('#setsGrid input, #attemptsGrid input[type="number"]')).some(i => i.value !== '') || notesInput.value.trim() !== '';
   }
   function saveSession() {
+    if (location.hash === '#recalc') return; // the hidden copy opened by the graph page must not touch the saved session
     try {
       if (selectedExercise && hasTypedValues()) snapshotDraft(selectedExercise);
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
@@ -4419,6 +4942,7 @@
   window.addEventListener('pagehide', saveSession);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSession(); });
   function restoreSession() {
+    if (location.hash === '#recalc') return;
     let s = null;
     try { s = JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { return; }
     if (!s || !(Date.now() - s.at < 12 * 3600 * 1000)) return;
@@ -4446,25 +4970,32 @@
   buildSetsGrid();
   buildAttemptsGrid();
   loadData();
-  loadLayout();
-  // Older saves may have "category" ordered before "block" from before Blocks
-  // moved above Category — nudge it back so upgrades match the new default.
-  (function ensureBlockBeforeCategory() {
-    const catIdx = layout.findIndex(p => p.id === 'category');
-    const blockIdx = layout.findIndex(p => p.id === 'block');
-    if (catIdx !== -1 && blockIdx !== -1 && blockIdx > catIdx) {
-      const [blockItem] = layout.splice(blockIdx, 1);
-      layout.splice(catIdx, 0, blockItem);
-      saveLayout();
+  // one-time: set weights used to be stored as typed; from now on they are stored in kg
+  (function migrateWeightsToKg() {
+    const FLAG = 'workout-log-weights-kg-v1';
+    try { if (localStorage.getItem(FLAG)) return; } catch (e) { return; }
+    if (unitSystem === 'imperial') {
+      categories.forEach(c => (data[c] || []).forEach(en => (en.sets || []).forEach(st => {
+        if (st && typeof st === 'object' && st.kg != null && st.kg !== '' && !isNaN(Number(st.kg))) st.kg = Math.round(Number(st.kg) / KG_TO_LB * 1000) / 1000;
+      })));
+      saveData();
     }
+    lsSet(FLAG, '1');
   })();
+  loadLayout();
   renderBlockSelect();
   renderEquipmentSelect();
+  fillMissingPatterns();
   updateSkillsBadge();
   updateExercisePicker();
   applyLayout();
   renderThemeSwatches();
-  navigateTo(location.hash === '#history' ? 'history' : 'home');
+  navigateTo(({ '#history': 'history', '#config': 'config', '#skills': 'skills' })[location.hash] || 'home');
   restoreSession();
   render();
+  // the graph page's "Recalculate PRs" opens this page hidden with #recalc and waits for the answer
+  if (location.hash === '#recalc' && window.parent !== window) {
+    const n = recalcPRs();
+    try { window.parent.postMessage({ type: 'recalc-done', n }, location.origin); } catch (e) { /* ignore */ }
+  }
 })();

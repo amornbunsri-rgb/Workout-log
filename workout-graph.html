@@ -95,8 +95,10 @@
 <header>
   <div class="header-date-btn" style="cursor:default;">Progress</div>
   <div class="header-btns">
-    <a class="menu-btn" href="workout-log-standalone.html" aria-label="Back to workout log home" title="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
-    <a class="menu-btn" href="workout-log-standalone.html#history" aria-label="View calendar &amp; history" title="Calendar &amp; history"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></a>
+    <a class="menu-btn" href="workout-log-standalone.html" aria-label="Back to the workout log" title="Home"><i class="fa-solid fa-house" aria-hidden="true"></i></a>
+    <a class="menu-btn" href="workout-log-standalone.html#config" aria-label="Manage categories &amp; blocks" title="Categories &amp; blocks"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></a>
+    <a class="menu-btn" href="workout-log-standalone.html#skills" aria-label="Skill progressions" title="Skill progressions"><i class="fa-solid fa-medal" aria-hidden="true"></i></a>
+    <a class="menu-btn on" href="workout-graph.html" aria-label="Progress graphs" title="Progress graphs"><i class="fa-solid fa-chart-column" aria-hidden="true"></i></a>
     <button class="menu-btn" id="menuBtn" aria-label="Settings" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
     <div class="menu-panel hidden" id="menuPanel">
       <div class="import-row">
@@ -117,6 +119,17 @@
           <button class="mode-btn" data-units="metric" type="button">Metric</button>
           <button class="mode-btn" data-units="imperial" type="button">Imperial</button>
         </div>
+      </div>
+      <div class="theme-section">
+        <div class="theme-label">Week starts on</div>
+        <div class="mode-toggle" id="weekToggle">
+          <button class="mode-btn" data-week="1" type="button">Monday</button>
+          <button class="mode-btn" data-week="0" type="button">Sunday</button>
+        </div>
+      </div>
+      <div class="theme-section">
+        <button type="button" class="text-btn" id="recalcPrBtn"><i class="fa-solid fa-trophy" aria-hidden="true"></i> Recalculate PRs</button>
+        <div class="empty" id="recalcPrStatus" style="padding:6px 0 0;"></div>
       </div>
     </div>
   </div>
@@ -153,6 +166,20 @@
   </div>
 </div>
 
+<div class="chart-card hidden" id="balanceCard">
+  <div class="section-label" style="margin-bottom:8px;">Weekly balance</div>
+  <canvas id="balanceChart" height="170"></canvas>
+  <div class="balance-now" id="balanceNow"></div>
+  <div id="balanceFlags"></div>
+</div>
+
+<div class="chart-card hidden" id="straightCard">
+  <div class="section-label" style="margin-bottom:8px;">Straight-arm load</div>
+  <canvas id="straightChart" height="150"></canvas>
+  <div class="balance-now" id="straightNow"></div>
+  <div id="straightFlags"></div>
+</div>
+
 <div id="mainView" class="graph-layout hidden">
   <div class="exercise-nav">
     <div class="section-label-row">
@@ -185,6 +212,7 @@
         <div class="stat" id="totalRepsLabelWrap">Total reps<b id="totalReps">0</b></div>
         <div class="stat hidden" id="totalElevLabelWrap">Elevation<b id="totalElev">0</b></div>
       </div>
+      <div class="empty hidden" id="periodFormNote" style="padding:0 0 10px; font-size:12px;"></div>
 
       <div class="chart-card">
         <div class="section-label" id="setsChartLabel" style="margin-bottom:8px;">Sets</div>
@@ -215,6 +243,17 @@
           <div class="stat" id="statSetsLabelWrap">Total sets<b id="statSets">0</b></div>
           <div class="stat" id="statRepsLabelWrap">Total reps<b id="statReps">0</b></div>
         </div>
+        <div class="empty hidden" id="statFormNote" style="padding:8px 0 0; font-size:12px;"></div>
+      </div>
+      <div class="chart-card hidden" id="trendCard">
+        <div class="section-label" style="margin-bottom:8px;">Best per session</div>
+        <canvas id="trendChart" height="170"></canvas>
+        <div class="empty" id="trendNote" style="padding:8px 0 0; font-size:12px;"></div>
+      </div>
+      <div class="chart-card hidden" id="romCard">
+        <div class="section-label" style="margin-bottom:8px;">Range of motion</div>
+        <canvas id="romChart" height="170"></canvas>
+        <div class="empty" id="romNote" style="padding:8px 0 0; font-size:12px;"></div>
       </div>
       <div class="chart-card">
         <div class="section-label" style="margin-bottom:10px;">Bests</div>
