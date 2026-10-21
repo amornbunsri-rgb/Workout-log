@@ -1,33 +1,24 @@
-# Workout Log
+# Tests
 
-A workout logging web app that runs entirely in your browser. Log sets, reps, holds and equipment, follow training
-plans, track progress on graphs, and keep photos, measurements and goals. Your data stays on your device unless you
-choose to back it up or sync it.
+Two kinds:
 
-## Use it on your phone
+1. **`workout-tests.html`** (in the app folder). Open it from the same address as the app. It checks the shared maths and the
+   library file, reads none of your data and changes nothing.
+2. **`tests/e2e.py`**. Drives the real app in a headless browser against `sample-backup.json` (a copy of one of your exports):
+   merging, undo, two-device sync, chains, the custom dropdowns, reset, the backup reminder and the graph page.
+   Each run starts from a fresh browser, so your real data is never touched.
 
-1. Open the address of this site in Chrome on your phone and let it load once while online.
-2. Open Chrome's menu and choose **Install app** (or **Add to Home screen**).
-3. After that it opens full-screen and works offline.
+Run the second kind on a computer:
 
-## Backups
+    pip install playwright
+    playwright install chromium
+    cd tests
+    python3 e2e.py
 
-- **Settings menu:** Export backup, and Import backup to restore on another device.
-- **Profile screen:** Google Drive sync, and an automatic daily backup to a folder (Chrome or Edge on a computer only).
+Every line starts with PASS or FAIL. Use another backup with `WORKOUT_BACKUP=/path/to/backup.json python3 e2e.py`
+(the merge checks expect the names in the sample backup, so those may fail on a different one).
 
-Backups contain personal data, so do not upload them to this repository.
+# Editing `workout-log.js`
 
-## Files
-
-| File | What it does |
-| --- | --- |
-| `index.html` | Opens the app |
-| `workout-log-standalone.html`, `workout-log.js` | Main log page and its code |
-| `workout-graph.html`, `workout-graph.js` | Progress graphs |
-| `workout-shared.js` | Helpers used by both pages (units, formatting, colour themes, strength maths) |
-| `workout-log-style.css` | Styles for both pages |
-| `workout-tools.js`, `workout-library.js`, `workout-profile.js`, `workout-backup.js` | Timer and metronome, programme library, profile, automatic backup |
-| `workout-library.json` | Programmes, workouts, warm-ups, stretches, achievements |
-| `manifest.webmanifest`, `service-worker.js`, `workout-pwa.js`, `icons/` | Make it installable and usable offline |
-
-Keep all files in the same folder. File names are case sensitive on GitHub Pages.
+`workout-log.js` is built from the parts in `src/`. Edit a part, then run `node build.js`
+(`node build.js --check` tells you whether the built file is up to date).

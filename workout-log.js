@@ -472,7 +472,7 @@
     if (activeSuperset) {
       btn.classList.add('on');
       const picked = supersetMembers.size;
-      btn.innerHTML = `<i class="fa-solid fa-link-slash" aria-hidden="true"></i> ${picked ? picked + ' selected · ' : ''}${activeSuperset.count} logged · End`;
+      btn.innerHTML = `<i class="fa-solid fa-link-slash" aria-hidden="true"></i> <span class="pill-full">${picked ? picked + ' selected · ' : ''}${activeSuperset.count} logged · End</span><span class="pill-short">End${picked ? ' (' + picked + ')' : ''}</span>`;
       btn.title = 'Tap to end superset. Tap exercises to add or remove them; Add logs every selected exercise that has values.';
     } else {
       btn.classList.remove('on');
@@ -675,7 +675,7 @@
       col.className = 'set-col';
       col.innerHTML = `
         <div class="set-num" aria-hidden="true">${i}</div>
-        <div class="set-body"><div class="set-row"><div class="set-field set-field-reps">
+        <div class="set-body">${i > 1 ? `<div class="chain-between"><button type="button" class="chain-pill" id="chainBtn${i}" aria-pressed="false" title="Count this set as one continuous rep with the previous set"><i class="fa-solid fa-link" aria-hidden="true"></i> Chained to previous</button><input type="hidden" id="chain${i}" /></div>` : ''}<div class="set-row"><div class="set-field set-field-reps">
           <label for="set${i}">Reps</label>
           <input type="number" min="1" id="set${i}" placeholder="reps" />
           <div class="lr-row hidden" id="lr${i}">
@@ -688,7 +688,7 @@
           <input type="number" min="0" id="ecc${i}" placeholder="sec" class="ecc-input" />
         </div>
         <div class="set-field">
-          <label for="kg${i}">Weight / band (−)</label>
+          <label for="kg${i}">Weight ±</label>
           <input type="number" step="0.5" id="kg${i}" placeholder="±${weightUnitLabel()}" class="kg-input" />
         </div>
         <div class="set-field angle-field hidden">
@@ -701,7 +701,7 @@
         </div>
         <div class="set-field equip-field">
           <select id="equip${i}" class="equip-select" required aria-label="Equipment for set ${i}"></select>
-        </div>${i > 1 ? `<div class="set-field chain-field hidden"><select id="chain${i}" class="equip-select" required aria-label="Chain set ${i} to the previous set"><option value="">Chain</option><option value="1">Chained to previous</option></select></div>` : ''}</div><div class="set-row set-row-flags">
+        </div></div><div class="set-row set-row-flags">
           <div class="set-field"><select id="rpe${i}" class="equip-select" required aria-label="RPE for set ${i}"><option value="">RPE</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></div>
           <div class="set-field"><select id="flag${i}" class="equip-select" required aria-label="Flag for set ${i}"><option value="">Flag</option><option value="broke">Form broke</option><option value="pain">Pain</option><option value="both">Pain + form broke</option></select></div>
         </div></div>`;
@@ -729,10 +729,25 @@
       document.getElementById('var' + i).addEventListener('change', () => onVarInput(i));
       wireSideMirror(document.getElementById('left' + i), document.getElementById('right' + i));
     }
+    syncChainPills();
     updateMetricsSection(currentExerciseName());
     renderAddSetBtn();
     applySetsScrollWindow();
   }
+  // the "Chained to previous" pill above sets 2 and up; its state lives in a hidden field so drafts, clearing and removing sets keep working
+  function syncChainPills() {
+    for (let i = 2; i <= numSets; i++) {
+      const v = document.getElementById('chain' + i), b = document.getElementById('chainBtn' + i);
+      if (!v || !b) continue;
+      const on = v.value === '1';
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    }
+  }
+  setsGrid.addEventListener('click', (e) => {
+    const b = e.target.closest('.chain-pill'); if (!b) return;
+    const v = document.getElementById('chain' + b.id.replace('chainBtn', ''));
+    if (v) { v.value = v.value === '1' ? '' : '1'; syncChainPills(); }
+  });
   function applySetsScrollWindow() {
     const maxOffset = Math.max(0, numSets - SETS_WINDOW);
     if (setsScrollOffset > maxOffset) setsScrollOffset = maxOffset;
@@ -740,6 +755,8 @@
     Array.from(setsGrid.children).forEach((col, idx) => {
       col.classList.toggle('hidden', idx < setsScrollOffset || idx >= setsScrollOffset + SETS_WINDOW);
     });
+    const firstShown = Array.from(setsGrid.children).find(c => !c.classList.contains('hidden'));
+    Array.from(setsGrid.children).forEach(c => c.classList.toggle('first-visible', c === firstShown)); // field labels only above the first visible set
     const upBtn = document.getElementById('setsScrollUpBtn');
     const downBtn = document.getElementById('setsScrollDownBtn');
     const scrollable = numSets > SETS_WINDOW;
@@ -813,6 +830,8 @@
     Array.from(attemptsGrid.children).forEach((col, idx) => {
       col.classList.toggle('hidden', idx < attemptsScrollOffset || idx >= attemptsScrollOffset + SETS_WINDOW);
     });
+    const firstShownA = Array.from(attemptsGrid.children).find(c => !c.classList.contains('hidden'));
+    Array.from(attemptsGrid.children).forEach(c => c.classList.toggle('first-visible', c === firstShownA));
     const upBtn = document.getElementById('attemptsScrollUpBtn');
     const downBtn = document.getElementById('attemptsScrollDownBtn');
     const scrollable = numAttempts > SETS_WINDOW;
@@ -3188,6 +3207,7 @@
   }
 
   function updateMetricsSection(name) {
+    syncChainPills();
     const holdModeToggleBtn = document.getElementById('holdModeToggleBtn');
     if (window.WorkoutApp && window.WorkoutApp.onMetricsUpdate) window.WorkoutApp.onMetricsUpdate({ isometric: !!name && isIsometricExercise(name) && !isDistanceExercise(name), distance: isDistanceExercise(name) });
     if (isDistanceExercise(name)) {
@@ -3239,7 +3259,6 @@
     setsGrid.querySelectorAll('.angle-field').forEach(f => f.classList.toggle('hidden', !leverage));
     const varList = exerciseVariations(name);
     setsGrid.querySelectorAll('.variation-field').forEach(f => f.classList.toggle('hidden', !varList.length));
-    setsGrid.querySelectorAll('.chain-field').forEach(f => f.classList.toggle('hidden', !varList.length)); // chaining is for exercises with variations
     setsGrid.querySelectorAll('.var-select').forEach(sel => fillVarSelect(sel));
     for (let i = 1; i <= numSets; i++) {
       const primary = document.getElementById('set' + i);
@@ -3348,10 +3367,12 @@
     if (list.length) {
       exerciseGrid.classList.remove('hidden');
       exerciseText.classList.add('hidden');
+      let colorsAssigned = false;
       const pending = [];
       const doneNames = activeBlock ? namesLoggedOn(dateInput.value) : new Set();
       const planRefs = activeBlock ? (blockRefs[activeBlock] || []) : [];
       list.forEach(({ exObj, originCategory }) => {
+        if (!exObj.color) colorsAssigned = true;
         ensureExerciseColor(originCategory, exObj);
         const ref = planRefs.find(r => r.name === exObj.name);
         const tgt = targetText(ref);
@@ -3425,7 +3446,7 @@
       const rows = [0, 1, 2].map(() => { const r = document.createElement('div'); r.className = 'ex-row'; r._w = 0; return r; });
       pending.forEach(p => { const r = rows.reduce((a, b) => (b._w < a._w ? b : a)); r.appendChild(p.wrap); r._w += p.w + 8; });
       rows.forEach(r => { if (r.children.length) exerciseGrid.appendChild(r); });
-      saveLists();
+      if (colorsAssigned) saveLists();
     } else {
       exerciseGrid.classList.add('hidden');
       exerciseText.classList.remove('hidden');
@@ -3715,6 +3736,7 @@
     resetKgCascade();
     resetEquipCascade();
     resetVarCascade();
+    syncChainPills();
   }
   // optional per-set effort (RPE), pain and form flags
   function flagProps(i) {
@@ -3722,8 +3744,8 @@
     if (r && r.value) o.rpe = Number(r.value);
     if (f && (f.value === 'pain' || f.value === 'both')) o.pain = true;
     if (f && (f.value === 'broke' || f.value === 'both')) o.formBroke = true;
-    const c = document.getElementById('chain' + i), cf = c && c.closest('.chain-field');
-    if (c && c.value === '1' && cf && !cf.classList.contains('hidden')) o.chain = true; // continuous with the previous set
+    const c = document.getElementById('chain' + i);
+    if (c && c.value === '1') o.chain = true; // continuous with the previous set
     return o;
   }
   function readSets(name) {
@@ -4157,7 +4179,17 @@
       }
     } catch (e) { /* ignore */ }
   }
+  // Empty fields (null, '') are left out of stored entries and sets: backups are about a third smaller, and every reader treats a missing field as empty.
+  function compactEntry(e) {
+    if (!e || typeof e !== 'object') return e;
+    Object.keys(e).forEach(k => { if (e[k] === null || e[k] === undefined || e[k] === '' || (k === 'isPR' && e[k] === false)) delete e[k]; });
+    if (Array.isArray(e.sets)) e.sets.forEach(s => {
+      if (s && typeof s === 'object') Object.keys(s).forEach(k => { if (s[k] === null || s[k] === undefined || s[k] === '') delete s[k]; });
+    });
+    return e;
+  }
   function saveData() {
+    categories.forEach(c => (data[c] || []).forEach(compactEntry));
     try {
       localStorage.setItem(DATA_KEY, JSON.stringify(data));
     } catch (e) {
@@ -4230,7 +4262,7 @@
         `<input type="number" min="0" data-f="ecc" value="${num(s.eccentric)}" placeholder="ecc s" aria-label="Eccentric seconds" />` +
         `<input type="number" step="0.5" data-f="kg" value="${s.kg == null || s.kg === '' ? '' : round2(kgToDisplay(Number(s.kg)))}" placeholder="±${weightUnitLabel()}" aria-label="Weight" />` +
         (vars.length || s.variation ? `<select data-f="var" aria-label="Variation">${optHtml(vars, s.variation || '', 'Variation')}</select>` : '') +
-        `<select data-f="equip" aria-label="Equipment">${optHtml(equipmentList, s.equipment || '', 'Equipment')}</select><select data-f="rpe" aria-label="RPE">${rpeOpts(s.rpe)}</select><select data-f="flag" aria-label="Flag">${flagOpts(s)}</select>${i > 0 ? `<select data-f="chain" aria-label="Chain"><option value="">Chain</option><option value="1"${s.chain ? ' selected' : ''}>Chained to previous</option></select>` : ''}<button type="button" class="text-btn ee-uni" data-act="uni" title="Switch between one value and left/right">${uni ? '1 value' : 'L/R'}</button></div>`;
+        `<select data-f="equip" aria-label="Equipment">${optHtml(equipmentList, s.equipment || '', 'Equipment')}</select><select data-f="rpe" aria-label="RPE">${rpeOpts(s.rpe)}</select><select data-f="flag" aria-label="Flag">${flagOpts(s)}</select>${i > 0 ? `<button type="button" class="chain-pill ee-chain${s.chain ? ' on' : ''}" aria-pressed="${s.chain ? 'true' : 'false'}" data-act="chain"><i class="fa-solid fa-link" aria-hidden="true"></i> Chained to previous</button>` : ''}<button type="button" class="text-btn ee-uni" data-act="uni" title="Switch between one value and left/right">${uni ? '1 value' : 'L/R'}</button></div>`;
     };
     let h = `<div class="ee-field"><label for="eeDate">Date</label><input type="date" id="eeDate" value="${esc(entry.date)}" /></div>`;
     if (isDist) {
@@ -4249,6 +4281,8 @@
     const setsBox = body.querySelector('#eeSets');
     if (setsBox) {
       setsBox.onclick = (e) => {
+        const cp = e.target.closest('.ee-chain');
+        if (cp) { cp.classList.toggle('on'); cp.setAttribute('aria-pressed', String(cp.classList.contains('on'))); return; }
         const b = e.target.closest('[data-act="uni"]');
         if (!b) return;
         const row = b.closest('.ee-set');
@@ -4261,7 +4295,7 @@
         st.variation = row.querySelector('[data-f="var"]') ? f('var') : '';
         st.equipment = f('equip');
         st.rpe = f('rpe') ? Number(f('rpe')) : undefined;
-        if (f('chain') === '1') st.chain = true;
+        { const cb = row.querySelector('.ee-chain'); if (cb && cb.classList.contains('on')) st.chain = true; }
         const fv2 = f('flag'); st.pain = fv2 === 'pain' || fv2 === 'both'; st.formBroke = fv2 === 'broke' || fv2 === 'both';
         const tmp = document.createElement('div');
         tmp.innerHTML = setRow(st, Array.prototype.indexOf.call(setsBox.children, row));
@@ -4304,7 +4338,7 @@
           st.angle = old.angle || null;
           if (f('rpe')) st.rpe = Number(f('rpe'));
           const fv = f('flag'); if (fv === 'pain' || fv === 'both') st.pain = true; if (fv === 'broke' || fv === 'both') st.formBroke = true;
-          if (i > 0 && f('chain') === '1') st.chain = true;
+          { const cb = row.querySelector('.ee-chain'); if (i > 0 && cb && cb.classList.contains('on')) st.chain = true; }
           st.equipment = f('equip') || null;
           st.variation = row.querySelector('[data-f="var"]') ? (f('var') || null) : (old.variation || null);
           sets.push(st);
@@ -4547,6 +4581,7 @@
     // jump the calendar to the month of the entry you just added, so it's visible immediately
     const addedDate = new Date(date + 'T00:00:00');
     calViewDate = new Date(addedDate.getFullYear(), addedDate.getMonth(), 1);
+    expandedWeeks.add(getWeekStart(date)); // open the week group the new entry is in
 
     if (hasList) {
       selectedExercise = "";
@@ -4564,7 +4599,24 @@
   };
 
   // ---- Export / Import ----
+  // the Excel library is large, so it is only fetched the first time you export (the service worker keeps a copy for offline use)
+  let xlsxPromise = null;
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve();
+    if (!xlsxPromise) xlsxPromise = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = res;
+      sc.onerror = () => { xlsxPromise = null; rej(new Error('xlsx')); };
+      document.head.appendChild(sc);
+    });
+    return xlsxPromise;
+  }
   document.getElementById('exportXlsxBtn').onclick = () => {
+    showToast('Preparing the Excel file…');
+    loadXlsx().then(exportXlsx, () => showToast('Could not load the Excel library. Check your connection and try again.'));
+  };
+  function exportXlsx() {
     const wb = XLSX.utils.book_new();
     // use whichever is larger: the current set count, or the most sets any logged entry actually has
     let maxSetsInData = numSets;
@@ -4617,7 +4669,7 @@
     const stamp = timestampForFilename();
     XLSX.writeFile(wb, `workout-log-${stamp}.xlsx`);
     menuPanel.classList.add('hidden');
-  };
+  }
 
 
   function buildBackupPayload() {
@@ -4970,6 +5022,7 @@
   buildSetsGrid();
   buildAttemptsGrid();
   loadData();
+  saveData(); // also compacts data saved by an older version
   // one-time: set weights used to be stored as typed; from now on they are stored in kg
   (function migrateWeightsToKg() {
     const FLAG = 'workout-log-weights-kg-v1';

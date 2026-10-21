@@ -3695,10 +3695,6 @@
    "exercise": "Pull-ups"
   },
   {
-   "name": "Pullups",
-   "exercise": "Pull-ups"
-  },
-  {
    "name": "Wide",
    "exercise": "Pull-ups",
    "variation": "Wide"
@@ -3721,11 +3717,6 @@
   },
   {
    "name": "Chin-ups",
-   "exercise": "Pull-ups",
-   "variation": "Chin-up"
-  },
-  {
-   "name": "Chin up",
    "exercise": "Pull-ups",
    "variation": "Chin-up"
   },
@@ -3807,21 +3798,12 @@
    "exercise": "Muscle-up"
   },
   {
-   "name": "Muscle-ups",
-   "exercise": "Muscle-up"
-  },
-  {
    "name": "Low-bar muscle-up negatives",
    "exercise": "Muscle-up",
    "variation": "Negative"
   },
   {
    "name": "One arm pull-up negatives",
-   "exercise": "One-arm pull-up",
-   "variation": "Negative"
-  },
-  {
-   "name": "One-arm pull-up negatives",
    "exercise": "One-arm pull-up",
    "variation": "Negative"
   },
@@ -4090,11 +4072,6 @@
   },
   {
    "name": "Scapular pull-ups",
-   "exercise": "Pull-ups",
-   "variation": "Scapular"
-  },
-  {
-   "name": "Scapular pull-up",
    "exercise": "Pull-ups",
    "variation": "Scapular"
   },

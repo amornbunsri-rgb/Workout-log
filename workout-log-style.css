@@ -212,7 +212,7 @@
   }
 
   .metrics-title { text-align: center; margin-bottom: 8px; }
-  .metrics-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .metrics-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; container-type: inline-size; }
   .metrics-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .pill-select-btn {
     appearance: none; -webkit-appearance: none; -moz-appearance: none;
@@ -235,8 +235,9 @@
     font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; display: flex; align-items: center; justify-content: center;
   }
   .set-field { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; }
-  .set-field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
-  .set-col:not(:first-child) .set-field label { visibility: hidden; }
+  .set-field label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .set-col .set-field label { display: none; }
+  .set-col.first-visible .set-field label { display: block; } /* labels only above the first visible set */
   .set-col input, #distanceRow input {
     text-align: center; padding: 0 2px; font-size: 18px; height: 70px; box-sizing: border-box;
     background: none; border: none; border-bottom: 1px solid var(--border-strong); border-radius: 0; width: 100%;
@@ -693,7 +694,7 @@ html.profile-open body { overflow: hidden; }
 .set-row { display: flex; gap: 12px; width: 100%; align-items: flex-start; }
 .set-col .set-row-sub select.equip-select { height: 44px; }
 
-.metrics-header-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.metrics-header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; flex: 1 1 auto; min-width: 0; overflow: hidden; }
 
 /* ---- edit entry form ---- */
 .edit-box { max-width: 440px; }
@@ -815,3 +816,38 @@ html.flags-on .set-row-flags { display: flex; }
 .cs-item:last-child { border-bottom: none; }
 .cs-item:hover { background: var(--surface-1); }
 .cs-item.on { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+
+/* pinch-zoom stays available; double-tap zoom is off so taps on buttons are instant */
+html, body { touch-action: manipulation; }
+
+/* ---- backup reminder (see workout-backup.js) ---- */
+.bk-reminder { position: fixed; z-index: 47; left: 12px; right: 12px; margin: 0 auto; max-width: 460px; bottom: calc(var(--bottom-bar-h) + 14px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--accent-border); border-radius: 12px; box-shadow: 0 8px 28px rgba(20, 18, 14, 0.22); }
+.bk-reminder span { flex: 1; min-width: 150px; }
+
+/* ---- header pills stay on one row: shorter text on narrow rows ---- */
+.pill-select-btn { white-space: nowrap; }
+.metrics-header-left .pill-select-btn { min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+.pill-short { display: none; }
+@container (max-width: 400px) {
+  .pill-opt, .pill-full { display: none; }
+  .pill-short { display: inline; }
+}
+
+/* ---- set numbers sit behind the fields as a large watermark, so the fields get the full width ---- */
+#setsGrid .set-col, #attemptsGrid .set-col { position: relative; gap: 0; }
+#setsGrid .set-num, #attemptsGrid .set-num {
+  position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: auto; height: auto; margin: 0;
+  background: none; border: none; border-radius: 0; color: var(--text-muted); opacity: 0.2; z-index: 0; pointer-events: none;
+  font-size: clamp(64px, 24vw, 112px); font-weight: 800; line-height: 1; letter-spacing: -0.04em;
+}
+#setsGrid .set-body, #attemptsGrid .set-field { position: relative; z-index: 1; }
+
+/* ---- "Chained to previous" pill between sets ---- */
+.chain-between { display: flex; justify-content: center; margin: -4px 0 2px; }
+.chain-pill {
+  font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 12px; border-radius: 999px; border: 1px dashed var(--border-strong); background: var(--surface-2); color: var(--text-muted);
+}
+.chain-pill.on { border-style: solid; border-color: var(--accent); background: var(--accent); color: #fff; }
+
+.ee-set .ee-chain { flex-basis: 100%; justify-content: center; }

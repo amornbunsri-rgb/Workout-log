@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Workout Log</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#fbfaf8" />
@@ -12,7 +12,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="Workout" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="workout-log-style.css" />
 <script>
   // Applied before the stylesheet paints anything, so there's no flash of the wrong theme.
@@ -151,7 +150,7 @@
     <div class="metrics-header-row">
       <div class="metrics-header-left">
       <button type="button" class="pill-select-btn" id="supersetToggleBtn"><i class="fa-solid fa-link" aria-hidden="true"></i> Superset</button>
-      <button type="button" class="pill-select-btn hidden" id="holdModeToggleBtn" aria-pressed="false" aria-label="Attempts mode (tap to toggle)" title="Attempts mode: log separate hold attempts instead of working sets"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> Attempts</button>
+      <button type="button" class="pill-select-btn hidden" id="holdModeToggleBtn" aria-pressed="false" aria-label="Attempts mode (tap to toggle)" title="Attempts mode: log separate hold attempts instead of working sets"><i class="fa-solid fa-list-ol" aria-hidden="true"></i> <span class="pill-opt">Attempts</span></button>
     </div>
       <div class="metrics-header-actions">
         <button type="button" class="icon-btn" id="toolsBtn" aria-label="Timer, stopwatch &amp; metronome" aria-expanded="false" title="Timer, stopwatch &amp; metronome"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></button>
