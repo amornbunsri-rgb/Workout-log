@@ -17,7 +17,8 @@
   var mod = document.createElement('div');
   mod.className = 'module'; mod.id = 'module-config-variations';
   mod.innerHTML =
-    '<div class="section-label-row"><div class="section-label">Variations</div></div>' +
+    '<div class="section-label-row"><div class="section-label">Variations</div><button class="icon-btn" id="variationsCollapseBtn" type="button"></button></div>' +
+    '<div id="variationsSectionBody">' +
     '<div class="empty" style="padding:0 0 8px;">One exercise, many variations: pick the variation on each set (lever position, grip, tempo) instead of keeping a separate exercise for each.</div>' +
     '<details class="var-sec" open><summary>Merge look-alike exercises</summary>' +
       '<div class="empty" style="padding:6px 0;">Folds exercises such as <b>Wide</b> or <b>Archer</b> into <b>Pull-ups</b> with the matching variation. Your entries move with them, nothing is deleted, and you can undo the last merge.</div>' +
@@ -50,8 +51,13 @@
       '<div class="var-actions"><button type="button" class="primary-btn" id="catScan">Check categories</button>' +
         '<button type="button" class="text-btn hidden" id="catMoveAll">Move all</button></div>' +
       '<div id="catTidyList" class="var-list"></div>' +
-    '</details>';
+    '</details>' +
+    '</div>';
   anchor.insertAdjacentElement('afterend', mod);
+  window.WorkoutShared.ui.collapse($('variationsCollapseBtn'), $('variationsSectionBody'), 'collapsed:variationsSectionBody');
+  window.WorkoutShared.ui.details(mod.querySelectorAll('.var-sec')[0], 'details:var-merge');
+  window.WorkoutShared.ui.details(mod.querySelectorAll('.var-sec')[1], 'details:var-lists');
+  window.WorkoutShared.ui.details(mod.querySelectorAll('.var-sec')[2], 'details:var-tidy');
 
   // ---------------- suggestions ----------------
   function suggestions() {

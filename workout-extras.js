@@ -60,9 +60,9 @@
     '<div class="hold-sub" id="hbSub"></div>' +
     '<div class="hold-actions"><button type="button" class="hold-primary" id="hbMain">Start</button><button type="button" id="hbAlt">Skip</button></div>' +
     '<div class="hold-settings">' +
-      '<label class="hold-only">Get ready <select id="hbPrep"></select></label>' +
-      '<label><input type="checkbox" id="hbAuto" /> Auto rest timer</label>' +
-      '<label>Rest <select id="hbRest"></select></label>' +
+      '<label class="hold-only hold-pick"><span>Get ready</span> <select id="hbPrep"></select></label>' +
+      '<label class="hold-pick"><span>Rest</span> <select id="hbRest"></select></label>' +
+      '<label class="hold-auto"><input type="checkbox" id="hbAuto" /> Start the rest timer automatically after each set</label>' +
     '</div>';
   document.body.appendChild(bar);
   function $(id) { return bar.querySelector('#' + id); }

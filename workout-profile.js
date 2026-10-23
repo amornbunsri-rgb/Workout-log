@@ -89,8 +89,15 @@
       '<div class="module">' +
         '<div class="section-label-row"><div class="section-label">Goals</div></div>' +
         '<div class="add-inline"><input type="text" id="goalText" placeholder="New goal (e.g. Hold a 10 s tuck planche)" maxlength="100" />' +
-          '<input type="date" id="goalDue" aria-label="Target date (optional)" title="Target date (optional)" />' +
-          '<button type="button" id="goalAdd">Add</button></div>' +
+          '<input type="date" id="goalDue" aria-label="Target date (optional)" title="Target date (optional)" /></div>' +
+        '<label class="lib-opt" style="margin:8px 2px 0;"><input type="checkbox" id="goalLinkToggle" /> Measure it with an exercise (shows your best, what is left and the days left)</label>' +
+        '<div class="goal-link hidden" id="goalLinkBox">' +
+          '<select id="goalEx" aria-label="Exercise"></select>' +
+          '<select id="goalVar" aria-label="Variation"></select>' +
+          '<div class="goal-link-row"><select id="goalMetric" aria-label="What to measure"><option value="hold">Best hold (seconds)</option><option value="reps">Most reps in one set</option><option value="weight">Heaviest added weight</option></select>' +
+            '<input type="number" id="goalTarget" min="0" step="any" placeholder="Target" aria-label="Target" /></div>' +
+        '</div>' +
+        '<div class="add-inline"><button type="button" id="goalAdd">Add goal</button></div>' +
         '<div id="goalList" style="margin-top:8px;"></div>' +
       '</div>' +
       '<div class="module">' +
@@ -107,6 +114,11 @@
           '</div></div>' +
         '<div class="empty hidden" id="pfCompareHint">Tap two photos to compare them.</div>' +
         '<div class="photo-grid" id="pfGrid"></div>' +
+        '<div class="photo-file-row">' +
+          '<button type="button" class="text-btn" id="pfSaveFile"><i class="fa-solid fa-file-export" aria-hidden="true"></i> Save photos file</button>' +
+          '<button type="button" class="text-btn" id="pfLoadFile"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Load photos file</button>' +
+        '</div>' +
+        '<div class="empty" id="pfFileStatus" style="padding:6px 0 0;">Photos and your profile picture stay on this device. To move them to another device or profile, save a photos file here and load it there, or use Google Drive sync below.</div>' +
       '</div>' +
       '<div class="module">' +
         '<div class="section-label-row"><div class="section-label">Google Drive sync</div></div>' +
@@ -128,7 +140,8 @@
     '</div>' +
     '<input type="file" id="pfAvatarFile" accept="image/*" class="hidden" />' +
     '<input type="file" id="pfCameraFile" accept="image/*" capture="environment" class="hidden" />' +
-    '<input type="file" id="pfUploadFile" accept="image/*" multiple class="hidden" />';
+    '<input type="file" id="pfUploadFile" accept="image/*" multiple class="hidden" />' +
+    '<input type="file" id="pfLoadInput" accept="application/json,.json" class="hidden" />';
   document.body.appendChild(sheet);
 
   var viewer = document.createElement('div');
@@ -137,7 +150,7 @@
   viewer.setAttribute('aria-label', 'Photo');
   viewer.innerHTML =
     '<div class="photo-viewer-bar"><button type="button" class="icon-btn" id="pvClose" aria-label="Close" title="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>' +
-      '<div class="photo-viewer-actions"><button type="button" class="icon-btn" id="pvDate" aria-label="Change date" title="Change date"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i></button>' +
+      '<div class="photo-viewer-actions"><button type="button" class="icon-btn hidden" id="pvLayout" aria-label="Stack the photos" title="Stack the photos"><i class="fa-solid fa-grip-lines" aria-hidden="true"></i></button><button type="button" class="icon-btn" id="pvDate" aria-label="Change date" title="Change date"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i></button>' +
       '<button type="button" class="icon-btn" id="pvDelete" aria-label="Delete photo" title="Delete photo"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div></div>' +
     '<div class="photo-viewer-stage" id="pvStage"></div>' +
     '<div class="photo-viewer-nav"><button type="button" class="icon-btn" id="pvPrev" aria-label="Older photo" title="Older"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>' +
@@ -241,6 +254,67 @@
   $('pfCameraFile').onchange = function () { var f = this.files; addPhotos(f); this.value = ''; };
   $('pfUploadFile').onchange = function () { var f = this.files; addPhotos(f); this.value = ''; };
 
+  // ---------------- photos file: move photos and the profile picture to another device or profile ----------------
+  function blobToDataUrl(b) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; r.readAsDataURL(b); }); }
+  function dataUrlToBlob(u) { return fetch(u).then(function (r) { return r.blob(); }); }
+  function fileStatus(msg, isErr) { var el = $('pfFileStatus'); el.textContent = msg; el.classList.toggle('error', !!isErr); }
+  function buildPhotosFile() {
+    return Promise.all([dbAll('photos'), dbGet('meta', 'avatar')]).then(function (r) {
+      var list = r[0], av = r[1];
+      return Promise.all(list.map(function (p) { return blobToDataUrl(p.blob).then(function (u) { return { id: p.id, date: p.date, data: u }; }); })).then(function (out) {
+        return (av && av.blob ? blobToDataUrl(av.blob) : Promise.resolve(null)).then(function (au) {
+          return { kind: 'workout-photos', version: 1, exportedAt: new Date().toISOString(), name: state.name, avatar: au ? { data: au, updated: av.updated || 0 } : null, photos: out };
+        });
+      });
+    });
+  }
+  $('pfSaveFile').onclick = function () {
+    fileStatus('Preparing the photos file…');
+    buildPhotosFile().then(function (payload) {
+      if (!payload.photos.length && !payload.avatar) { fileStatus('There are no photos or profile picture to save yet.'); return; }
+      var name = 'workout-photos-' + todayISO() + '.json', blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      var n = payload.photos.length + ' photo' + (payload.photos.length === 1 ? '' : 's') + (payload.avatar ? ' and your profile picture' : '');
+      var file = null; try { file = new File([blob], name, { type: 'application/json' }); } catch (e) { /* no File constructor */ }
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: name }).then(function () { fileStatus('Shared ' + n + '.'); }, function (e) {
+          if (e && e.name === 'AbortError') { fileStatus(''); return; }
+          fileStatus('Could not open the share sheet. Try again, or use a computer to save the file.', true);
+        });
+      }
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      fileStatus('Saved ' + n + ' to ' + name + '.');
+    })['catch'](function (e) { fileStatus((e && e.message) || 'Could not build the photos file', true); });
+  };
+  $('pfLoadFile').onclick = function () { $('pfLoadInput').click(); };
+  $('pfLoadInput').onchange = function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    fileStatus('Loading…');
+    f.text().then(function (t) {
+      var data = JSON.parse(t);
+      if (!data || data.kind !== 'workout-photos' || !Array.isArray(data.photos)) throw new Error('That is not a photos file from this app.');
+      return dbAll('photos').then(function (have) {
+        var ids = {}; have.forEach(function (p) { ids[p.id] = 1; });
+        var fresh = data.photos.filter(function (p) { return p && p.id && p.data && /^\d{4}-\d{2}-\d{2}$/.test(p.date) && !ids[p.id]; });
+        return fresh.reduce(function (chain, p) {
+          return chain.then(function () { return dataUrlToBlob(p.data).then(function (b) { state.deleted = state.deleted.filter(function (d) { return d !== p.id; }); return dbPut('photos', { id: p.id, date: p.date, blob: b }); }); });
+        }, Promise.resolve()).then(function () {
+          return dbGet('meta', 'avatar').then(function (cur) {
+            if (!data.avatar || !data.avatar.data || (cur && (cur.updated || 0) >= (data.avatar.updated || 0))) return false;
+            return dataUrlToBlob(data.avatar.data).then(function (b) { return dbPut('meta', { blob: b, updated: data.avatar.updated || Date.now() }, 'avatar').then(function () { return true; }); });
+          });
+        }).then(function (avatarSet) {
+          if (data.name && !state.name) { state.name = data.name; $('pfName').value = state.name; }
+          save();
+          var skipped = data.photos.length - fresh.length;
+          fileStatus('Added ' + fresh.length + ' photo' + (fresh.length === 1 ? '' : 's') + (skipped ? ' (' + skipped + ' already here)' : '') + (avatarSet ? ' and a profile picture' : '') + '.');
+          return Promise.all([loadPhotos(), loadAvatar()]);
+        });
+      });
+    })['catch'](function (e) { fileStatus((e && e.message) || 'Could not read that file', true); });
+  };
+
   // viewer: one photo (browse older/newer through the timeline) or two side by side (compare)
   var viewIds = [], viewIdx = 0, vUrls = [];
   function photoById(id) { return photos.filter(function (p) { return p.id === id; })[0]; }
@@ -262,7 +336,11 @@
     releaseViewerUrls();
     var stage = $('pvStage'), two = viewIds.length === 2;
     var shown = two ? viewIds.map(photoById) : [photos[viewIdx]];
-    stage.className = 'photo-viewer-stage' + (two ? ' two' : '');
+    var stacked = !!window.WorkoutShared.ui.get('photoStack', window.innerWidth < 520);
+    stage.className = 'photo-viewer-stage' + (two ? ' two' : '') + (two && stacked ? ' stacked' : '');
+    $('pvLayout').classList.toggle('hidden', !two);
+    $('pvLayout').innerHTML = '<i class="fa-solid ' + (stacked ? 'fa-table-columns' : 'fa-grip-lines') + '" aria-hidden="true"></i>';
+    $('pvLayout').title = $('pvLayout').ariaLabel = stacked ? 'Side by side' : 'Stack the photos';
     stage.innerHTML = '';
     shown.forEach(function (p) {
       if (!p) return;
@@ -278,6 +356,7 @@
   $('pvClose').onclick = function () { viewer.classList.add('hidden'); releaseViewerUrls(); };
   $('pvPrev').onclick = function () { if (viewIdx > 0) { viewIdx--; renderViewer(); } };
   $('pvNext').onclick = function () { if (viewIdx < photos.length - 1) { viewIdx++; renderViewer(); } };
+  $('pvLayout').onclick = function () { window.WorkoutShared.ui.set('photoStack', !window.WorkoutShared.ui.get('photoStack', window.innerWidth < 520)); renderViewer(); };
   $('pvDate').onclick = function () {
     var p = photos[viewIdx]; if (!p) return;
     var v = prompt('Photo date (YYYY-MM-DD):', p.date);
@@ -388,9 +467,56 @@
     var d = daysUntil(g.due);
     return d < 0 ? 'Overdue by ' + (-d) + (d === -1 ? ' day' : ' days') : d === 0 ? 'Due today' : 'Due in ' + d + (d === 1 ? ' day' : ' days');
   }
+  // ---- goals that measure an exercise ----
+  var METRIC_WORD = { hold: 'hold', reps: 'reps', weight: 'added weight' };
+  function lbMode() { return App.weightUnit && App.weightUnit() === 'lb'; }
+  function kgShown(kg) { return Math.round((lbMode() ? kg * 2.20462 : kg) * 10) / 10; }
+  function valueText(metric, v) { return metric === 'hold' ? v + ' s' : metric === 'weight' ? '+' + kgShown(v) + ' ' + (lbMode() ? 'lb' : 'kg') : v + (v === 1 ? ' rep' : ' reps'); }
+  function linkTitle(l) { return l.exercise + (l.variation ? ' · ' + (l.variation === '__none__' ? 'Standard' : l.variation) : '') + ': ' + (l.metric === 'hold' ? 'hold ' : '') + valueText(l.metric, l.target); }
+  function fillGoalExercises() {
+    var list = App.listExercisesForVariations ? App.listExercisesForVariations() : [], cats = {}, keep = $('goalEx').value;
+    list.forEach(function (e) { (cats[e.category] = cats[e.category] || []).push(e); });
+    $('goalEx').innerHTML = Object.keys(cats).map(function (c) {
+      return '<optgroup label="' + esc(c) + '">' + cats[c].sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (e) { return '<option value="' + esc(e.name) + '" data-iso="' + (e.isometric ? 1 : 0) + '">' + esc(e.name) + '</option>'; }).join('') + '</optgroup>';
+    }).join('');
+    if (keep && Array.prototype.some.call($('goalEx').options, function (o) { return o.value === keep; })) $('goalEx').value = keep;
+    fillGoalVariations(true);
+  }
+  function fillGoalVariations(resetMetric) {
+    var name = $('goalEx').value, vars = name && App.exerciseVariations ? App.exerciseVariations(name) : [];
+    $('goalVar').innerHTML = '<option value="">Any variation</option>' + (vars.length ? '<option value="__none__">Standard (no variation)</option>' : '') + vars.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+    $('goalVar').disabled = !vars.length;
+    if (resetMetric) { var o = $('goalEx').options[$('goalEx').selectedIndex]; $('goalMetric').value = o && o.dataset.iso === '1' ? 'hold' : 'reps'; }
+    updateTargetPlaceholder();
+  }
+  function updateTargetPlaceholder() { $('goalTarget').placeholder = $('goalMetric').value === 'hold' ? 'Seconds' : $('goalMetric').value === 'weight' ? 'Added ' + (lbMode() ? 'lb' : 'kg') : 'Reps'; }
+  $('goalLinkToggle').onchange = function () { $('goalLinkBox').classList.toggle('hidden', !this.checked); if (this.checked) fillGoalExercises(); };
+  $('goalEx').onchange = function () { fillGoalVariations(true); };
+  $('goalMetric').onchange = updateTargetPlaceholder;
+  // what to show under a linked goal; also ticks it off once the target has been reached
+  function linkedStatus(g) {
+    var l = g.link, p = App.goalProgress ? App.goalProgress(l) : { best: null }, text, pct = 0, reached = false;
+    if (p.best === null) text = 'Nothing logged yet for ' + l.exercise + (l.variation && l.variation !== '__none__' ? ' · ' + l.variation : '') + '.';
+    else {
+      pct = Math.min(100, Math.round(p.best / l.target * 100)); reached = p.best >= l.target;
+      text = 'Best ' + valueText(l.metric, p.best) + (p.bestDate ? ' (' + fmtDate(p.bestDate) + ')' : '') + ' of ' + valueText(l.metric, l.target);
+      if (!reached) {
+        var left = Math.round((l.target - p.best) * 10) / 10;
+        text += ' · ' + valueText(l.metric, left).replace(/^\+/, '') + ' to go';
+        if (g.due) { var d = daysUntil(g.due); if (d > 0) { var wk = d / 7; text += ' · ' + d + (d === 1 ? ' day' : ' days') + ' left' + (wk >= 1 ? ' · about ' + (Math.round(left / wk * 10) / 10) + (l.metric === 'hold' ? ' s' : l.metric === 'weight' ? ' ' + (lbMode() ? 'lb' : 'kg') : ' reps') + ' more per week' : ''); } }
+      }
+    }
+    return { text: text, pct: pct, reached: reached, reachedDate: p.reachedDate };
+  }
   function renderGoals() {
-    var box = $('goalList');
+    var box = $('goalList'), changed = false;
     box.innerHTML = '';
+    goals.forEach(function (g) {
+      if (!g.link || g.done || g.noAuto || !App.goalProgress) return;
+      var st = linkedStatus(g);
+      if (st.reached) { g.done = true; g.doneDate = st.reachedDate || todayISO(); changed = true; toast('Goal reached 🎯 ' + g.text); }
+    });
+    if (changed) { writeLS(GOAL_KEY, goals); renderAchievements(); }
     if (!goals.length) { box.innerHTML = '<div class="empty">No goals yet. Add something you are working toward.</div>'; return; }
     var open = goals.filter(function (g) { return !g.done; }).sort(function (a, b) { return (a.due || '9999').localeCompare(b.due || '9999'); });
     var done = goals.filter(function (g) { return g.done; }).sort(function (a, b) { return (b.doneDate || '').localeCompare(a.doneDate || ''); });
@@ -398,13 +524,16 @@
       var row = document.createElement('div');
       row.className = 'goal-row' + (g.done ? ' done' : '');
       var overdue = !g.done && g.due && daysUntil(g.due) < 0;
+      var st = g.link && App.goalProgress ? linkedStatus(g) : null;
       row.innerHTML =
         '<button type="button" class="goal-check" aria-label="' + (g.done ? 'Mark as not done' : 'Mark as done') + '"><i class="fa-solid ' + (g.done ? 'fa-circle-check' : 'fa-circle') + '" aria-hidden="true"></i></button>' +
         '<div class="goal-body"><div class="goal-text">' + esc(g.text) + '</div>' +
+          (st ? '<div class="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + st.pct + '"><span style="width:' + st.pct + '%"></span></div><div class="goal-prog">' + esc(st.text) + '</div>' : '') +
           '<div class="goal-sub' + (overdue ? ' overdue' : '') + '">' + (g.done ? 'Done ' + esc(g.doneDate || '') : esc(dueText(g))) + '</div></div>' +
         '<button type="button" class="icon-btn goal-del" aria-label="Delete goal" title="Delete goal"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>';
       row.querySelector('.goal-check').onclick = function () {
         g.done = !g.done; g.doneDate = g.done ? todayISO() : null;
+        if (g.link) g.noAuto = !g.done; // un-ticking a measured goal means "do not tick it for me again"
         writeLS(GOAL_KEY, goals); renderGoals(); renderAchievements();
         if (g.done) toast('Goal reached 🎯');
       };
@@ -417,11 +546,18 @@
     });
   }
   $('goalAdd').onclick = function () {
-    var text = $('goalText').value.trim();
+    var text = $('goalText').value.trim(), link = null;
+    if ($('goalLinkToggle').checked) {
+      var target = parseFloat($('goalTarget').value), metric = $('goalMetric').value;
+      if (!$('goalEx').value) { toast('Choose an exercise'); return; }
+      if (!(target > 0)) { toast('Enter a target above 0'); return; }
+      link = { exercise: $('goalEx').value, variation: $('goalVar').value || '', metric: metric, target: metric === 'weight' ? Math.round((lbMode() ? target / 2.20462 : target) * 1000) / 1000 : target };
+      if (!text) text = linkTitle(link);
+    }
     if (!text) { toast('Write the goal first'); return; }
-    goals.push({ id: uid(), text: text, due: $('goalDue').value || null, done: false, doneDate: null, created: todayISO() });
+    goals.push({ id: uid(), text: text, due: $('goalDue').value || null, done: false, doneDate: null, created: todayISO(), link: link || undefined });
     writeLS(GOAL_KEY, goals);
-    $('goalText').value = ''; $('goalDue').value = '';
+    $('goalText').value = ''; $('goalDue').value = ''; $('goalTarget').value = ''; $('goalLinkToggle').checked = false; $('goalLinkBox').classList.add('hidden');
     renderGoals();
   };
   $('goalText').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('goalAdd').click(); });

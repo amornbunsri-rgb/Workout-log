@@ -701,10 +701,9 @@ html.profile-open body { overflow: hidden; }
 .ee-field { margin-top: 10px; }
 .ee-field label { display: block; font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
 .ee-field input, .ee-field textarea { width: 100%; box-sizing: border-box; }
-.ee-set { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.ee-set .set-num { margin-top: 0; }
-.ee-set input { width: 62px; padding: 7px 4px; text-align: center; font-size: 14px; border-radius: 7px; }
-.ee-set select { max-width: 44%; padding: 7px 4px; font-size: 13px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-primary); font-family: inherit; }
+.ee-set { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.ee-set input { width: 100%; min-width: 0; box-sizing: border-box; padding: 7px 4px; text-align: center; font-size: 14px; border-radius: 7px; }
+.ee-set select { width: 100%; min-width: 0; max-width: none; padding: 7px 4px; font-size: 13px; border-radius: 7px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-primary); font-family: inherit; }
 .ee-btns { display: flex; gap: 8px; margin-top: 8px; }
 #eeSave { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
 
@@ -850,4 +849,63 @@ html, body { touch-action: manipulation; }
 }
 .chain-pill.on { border-style: solid; border-color: var(--accent); background: var(--accent); color: #fff; }
 
-.ee-set .ee-chain { flex-basis: 100%; justify-content: center; }
+
+/* ---- warm-ups & stretches: foldable rows that show their moves ---- */
+.routine-group { margin: 12px 0 2px; }
+.routine-item { border-bottom: 1px solid var(--border); padding: 6px 0; }
+.routine-head { display: flex; align-items: center; gap: 6px; }
+.routine-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; font-family: inherit; font-size: 14px; color: var(--text-primary); background: none; border: none; padding: 6px 0; cursor: pointer; }
+.routine-toggle > i { color: var(--text-muted); font-size: 12px; width: 12px; flex-shrink: 0; }
+.routine-toggle > span { min-width: 0; }
+.routine-meta { display: block; font-size: 12.5px; color: var(--text-muted); margin-top: 1px; }
+.routine-moves { margin: 2px 0 6px 22px; padding-left: 16px; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+.lib-create select { width: 100%; margin-top: 8px; box-sizing: border-box; font-family: inherit; font-size: 13.5px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-primary); }
+.photo-file-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+#pfFileStatus.error { color: var(--danger); }
+
+/* ---- 1. block and category pills share the row ---- */
+.exercise-tools-left { flex: 1 1 220px; }
+.exercise-tools-left .block-pill-wrap { flex: 1 1 0; min-width: 0; }
+.exercise-tools-left .block-pill-select { width: 100%; max-width: none; text-overflow: ellipsis; }
+.exercise-tools-icons { flex: 0 0 auto; }
+
+/* ---- 2. edit-entry form: each set is a tidy block ---- */
+.ee-set > .ee-nums, .ee-set > .ee-sels, .ee-set > .ee-foot { position: relative; z-index: 1; }
+.ee-foot .set-num { margin: 0; }
+.ee-nums { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.ee-sels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.ee-sels.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ee-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.ee-foot .ee-uni { margin-left: auto; }
+
+/* ---- 3. the bottom bar keeps the width of the content on big screens ---- */
+.header-btns { margin: 0 auto; max-width: 760px; }
+@media (min-width: 776px) {
+  .header-btns { border: 1px solid var(--border-strong); border-bottom: none; border-radius: 12px 12px 0 0; }
+}
+
+/* ---- 4. skill steps: text buttons left, icon buttons right on the same row ---- */
+.skill-mini-group { display: flex; gap: 6px; margin-left: auto; }
+.skill-step-actions .text-btn { padding: 5px 11px; }
+
+/* ---- 5. hold and rest timer settings as a grid ---- */
+.hold-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; align-items: end; }
+.hold-settings .hold-pick { display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
+.hold-settings .hold-pick span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+.hold-settings .hold-pick select { width: 100%; padding: 6px 6px; }
+.hold-settings .hold-auto { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+.hold-bar.no-hold .hold-settings .hold-pick:not(.hold-only) { grid-column: 1 / -1; }
+
+/* ---- 6. photo compare uses the whole screen, side by side or stacked ---- */
+.photo-viewer-stage.two { padding: 0; gap: 3px; }
+.photo-viewer-stage.two figure { gap: 4px; }
+.photo-viewer-stage.stacked { flex-direction: column; }
+.photo-viewer-stage.stacked figure { flex: 1 1 0; min-height: 0; }
+
+/* ---- measurable goals ---- */
+.goal-link { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 4px; }
+.goal-link select, .goal-link input { width: 100%; min-width: 0; box-sizing: border-box; font-family: inherit; font-size: 13.5px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-primary); }
+.goal-link-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 6px; }
+.goal-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: 6px; }
+.goal-bar span { display: block; height: 100%; background: var(--accent); }
+.goal-prog { font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; line-height: 1.35; }

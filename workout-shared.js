@@ -96,6 +96,29 @@
       if (!flags.length && hasData) flags.push(['ok', 'Straight-arm load looks steady.']);
       return { rows: rows, flags: flags, hasData: hasData, avg: avg };
     },
+    // remembers which sections are folded up or open (this browser only)
+    ui: (function () {
+      var KEY = 'workout-log-ui-v1';
+      function all() { try { var o = JSON.parse(localStorage.getItem(KEY)); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+      function get(k, d) { var o = all(); return Object.prototype.hasOwnProperty.call(o, k) ? o[k] : d; }
+      function set(k, v) { var o = all(); o[k] = v; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* ignore */ } }
+      // a <details> element keeps its open or closed state
+      function details(el, key) { if (!el) return; var v = get(key); if (typeof v === 'boolean') el.open = v; el.addEventListener('toggle', function () { set(key, el.open); }); }
+      // a chevron button that folds a section up and down
+      function collapse(btn, body, key) {
+        if (!btn || !body) return;
+        function apply(c) {
+          body.classList.toggle('hidden', c);
+          btn.innerHTML = '<i class="fa-solid fa-chevron-' + (c ? 'right' : 'down') + '" aria-hidden="true"></i>';
+          btn.title = c ? 'Expand' : 'Collapse';
+          btn.setAttribute('aria-label', (c ? 'Expand' : 'Collapse') + ' section');
+          btn.setAttribute('aria-expanded', String(!c));
+        }
+        apply(!!get(key, false));
+        btn.onclick = function () { var c = !body.classList.contains('hidden'); apply(c); set(key, c); };
+      }
+      return { KEY: KEY, get: get, set: set, details: details, collapse: collapse };
+    })(),
     WEEK_KEY: 'workout-log-weekstart-v1',
     // 1 = weeks start on Monday (default), 0 = Sunday; used by both pages
     loadWeekStart: function () {

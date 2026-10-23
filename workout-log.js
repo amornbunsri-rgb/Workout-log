@@ -1141,9 +1141,9 @@
     lists: [LISTS_KEY, ...LEGACY_LISTS_KEYS, EQUIPMENT_KEY, REMOVEDEX_KEY, 'workout-log-premerge-v1'],
     blocks: [BLOCKS_KEY],
     layout: [LAYOUT_KEY],
-    appearance: [NUMSETS_KEY, THEME_KEY, MODE_KEY],
+    appearance: [NUMSETS_KEY, THEME_KEY, MODE_KEY, Shared.ui.KEY],
     profile: [BODYWEIGHT_KEY, 'workout-log-measurements-v1', 'workout-log-goals-v1'],
-    plans: [SKILLS_KEY, 'workout-log-myprogram-v1', PLANMETA_KEY, PLANPROG_KEY, 'workout-log-plan-options-v1']
+    plans: [SKILLS_KEY, 'workout-log-myprogram-v1', PLANMETA_KEY, PLANPROG_KEY, 'workout-log-plan-options-v1', 'workout-log-custom-routines-v1']
   };
   const RESET_LABELS = {
     data: 'logged entries (your workout history)',
@@ -2073,7 +2073,8 @@
 
   // ---- Skill progressions: criteria checking, "train next" suggestions, and the Skills page ----
   // Built-in skill progressions (Planche, Front lever, ...) live in workout-library.json; see workout-library.js.
-  let collapsedSkillLines = new Set(); // in-memory only: which lines are folded up on the Skills page
+  let collapsedSkillLines = new Set(Shared.ui.get('skillsCollapsed', [])); // which lines are folded up on the Skills page (remembered)
+  function saveCollapsedSkills() { Shared.ui.set('skillsCollapsed', Array.from(collapsedSkillLines)); }
   let skillStepEditing = null;         // { lineId, stepId|null } while the step editor is open
 
   function allExerciseNames() {
@@ -2286,15 +2287,18 @@
     if (step.doneDate) actions.appendChild(skillTextBtn('Undo', () => setStepDone(line, step, false)));
     else actions.appendChild(skillTextBtn(ev.met ? 'Mark done & move up' : 'Mark done', () => setStepDone(line, step, true), ev.met));
     if (step.exercise && !step.doneDate) actions.appendChild(skillTextBtn('Log it', () => goLogExercise(step.exercise, step.variation)));
-    actions.appendChild(skillMiniBtn('<i class="fa-solid fa-pencil" aria-hidden="true"></i>', 'Edit step', () => openSkillStepModal(line.id, step.id)));
-    actions.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-up" aria-hidden="true"></i>', 'Move up', () => moveSkillStep(line, i, -1), '', i === 0));
-    actions.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-down" aria-hidden="true"></i>', 'Move down', () => moveSkillStep(line, i, 1), '', i === line.steps.length - 1));
-    actions.appendChild(skillMiniBtn('<i class="fa-regular fa-trash-can" aria-hidden="true"></i>', 'Delete step', () => {
+    const miniGroup = document.createElement('div');
+    miniGroup.className = 'skill-mini-group';
+    miniGroup.appendChild(skillMiniBtn('<i class="fa-solid fa-pencil" aria-hidden="true"></i>', 'Edit step', () => openSkillStepModal(line.id, step.id)));
+    miniGroup.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-up" aria-hidden="true"></i>', 'Move up', () => moveSkillStep(line, i, -1), '', i === 0));
+    miniGroup.appendChild(skillMiniBtn('<i class="fa-solid fa-arrow-down" aria-hidden="true"></i>', 'Move down', () => moveSkillStep(line, i, 1), '', i === line.steps.length - 1));
+    miniGroup.appendChild(skillMiniBtn('<i class="fa-regular fa-trash-can" aria-hidden="true"></i>', 'Delete step', () => {
       if (!confirm(`Delete the step "${step.name}"?`)) return;
       line.steps = line.steps.filter(x => x.id !== step.id);
       saveSkills();
       renderSkillsPage();
     }, 'danger'));
+    actions.appendChild(miniGroup);
     body.appendChild(nameEl); body.appendChild(goalEl); body.appendChild(statusEl); body.appendChild(actions);
     row.appendChild(dot);
     row.appendChild(body);
@@ -2326,6 +2330,7 @@
       titleBtn.appendChild(prog);
       titleBtn.onclick = () => {
         if (collapsedSkillLines.has(line.id)) collapsedSkillLines.delete(line.id); else collapsedSkillLines.add(line.id);
+        saveCollapsedSkills();
         renderSkillLines();
       };
       const lineActions = document.createElement('div');
@@ -2342,7 +2347,7 @@
       lineActions.appendChild(skillMiniBtn('<i class="fa-regular fa-trash-can" aria-hidden="true"></i>', 'Delete line', () => {
         if (!confirm(`Delete "${line.name}"${total ? ` and its ${total} step${total === 1 ? '' : 's'}` : ''}?`)) return;
         skillLines = skillLines.filter(l => l.id !== line.id);
-        collapsedSkillLines.delete(line.id);
+        collapsedSkillLines.delete(line.id); saveCollapsedSkills();
         saveSkills();
         renderSkillsPage();
       }, 'danger'));
@@ -3642,19 +3647,7 @@
   // search modal, so you don't have to leave the config page to look something up.
 
   // ---- Collapsible Blocks / Categories sections ----
-  function wireCollapse(btnId, bodyId) {
-    const btn = document.getElementById(btnId);
-    const body = document.getElementById(bodyId);
-    btn.onclick = () => {
-      const collapsing = !body.classList.contains('hidden');
-      body.classList.toggle('hidden', collapsing);
-      btn.innerHTML = collapsing
-        ? '<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>'
-        : '<i class="fa-solid fa-chevron-down" aria-hidden="true"></i>';
-      btn.title = collapsing ? 'Expand' : 'Collapse';
-      btn.setAttribute('aria-label', (collapsing ? 'Expand' : 'Collapse') + ' section');
-    };
-  }
+  function wireCollapse(btnId, bodyId) { Shared.ui.collapse(document.getElementById(btnId), document.getElementById(bodyId), 'collapsed:' + bodyId); }
   wireCollapse('blocksCollapseBtn', 'blocksSectionBody');
   wireCollapse('categoriesCollapseBtn', 'categoriesSectionBody');
   wireCollapse('equipmentCollapseBtn', 'equipmentSectionBody');
@@ -4258,11 +4251,11 @@
       const main = uni
         ? `<input type="number" min="0" data-f="left" value="${num(s.left)}" placeholder="L" aria-label="Left" /><input type="number" min="0" data-f="right" value="${num(s.right)}" placeholder="R" aria-label="Right" />`
         : `<input type="number" min="0" data-f="reps" value="${num(s.reps)}" placeholder="${entry.isometric ? 'sec' : 'reps'}" aria-label="${entry.isometric ? 'Seconds' : 'Reps'}" />`;
-      return `<div class="ee-set" data-uni="${uni ? 1 : 0}"><span class="set-num">${i + 1}</span>${main}` +
+      return `<div class="ee-set" data-uni="${uni ? 1 : 0}"><div class="ee-nums">${main}` +
         `<input type="number" min="0" data-f="ecc" value="${num(s.eccentric)}" placeholder="ecc s" aria-label="Eccentric seconds" />` +
-        `<input type="number" step="0.5" data-f="kg" value="${s.kg == null || s.kg === '' ? '' : round2(kgToDisplay(Number(s.kg)))}" placeholder="±${weightUnitLabel()}" aria-label="Weight" />` +
+        `<input type="number" step="0.5" data-f="kg" value="${s.kg == null || s.kg === '' ? '' : round2(kgToDisplay(Number(s.kg)))}" placeholder="±${weightUnitLabel()}" aria-label="Weight" /></div><div class="ee-sels${vars.length || s.variation ? ' four' : ''}">` +
         (vars.length || s.variation ? `<select data-f="var" aria-label="Variation">${optHtml(vars, s.variation || '', 'Variation')}</select>` : '') +
-        `<select data-f="equip" aria-label="Equipment">${optHtml(equipmentList, s.equipment || '', 'Equipment')}</select><select data-f="rpe" aria-label="RPE">${rpeOpts(s.rpe)}</select><select data-f="flag" aria-label="Flag">${flagOpts(s)}</select>${i > 0 ? `<button type="button" class="chain-pill ee-chain${s.chain ? ' on' : ''}" aria-pressed="${s.chain ? 'true' : 'false'}" data-act="chain"><i class="fa-solid fa-link" aria-hidden="true"></i> Chained to previous</button>` : ''}<button type="button" class="text-btn ee-uni" data-act="uni" title="Switch between one value and left/right">${uni ? '1 value' : 'L/R'}</button></div>`;
+        `<select data-f="equip" aria-label="Equipment">${optHtml(equipmentList, s.equipment || '', 'Equipment')}</select><select data-f="rpe" aria-label="RPE">${rpeOpts(s.rpe)}</select><select data-f="flag" aria-label="Flag">${flagOpts(s)}</select></div><div class="ee-foot"><span class="set-num" aria-label="Set ${i + 1}">${i + 1}</span>${i > 0 ? `<button type="button" class="chain-pill ee-chain${s.chain ? ' on' : ''}" aria-pressed="${s.chain ? 'true' : 'false'}" data-act="chain"><i class="fa-solid fa-link" aria-hidden="true"></i> Chained to previous</button>` : ''}<button type="button" class="text-btn ee-uni" data-act="uni" title="Switch between one value and left/right">${uni ? '1 value' : 'L/R'}</button></div></div>`;
     };
     let h = `<div class="ee-field"><label for="eeDate">Date</label><input type="date" id="eeDate" value="${esc(entry.date)}" /></div>`;
     if (isDist) {
@@ -4728,6 +4721,28 @@
     addSkillTemplates: (t) => addSkillTemplates(t),
     ensureExercises: (items) => ensureExercises(items),
     exerciseVariations: (name) => exerciseVariations(name),
+    // best so far for a measurable goal: link = { exercise, variation ('' = any, '__none__' = standard), metric: hold | reps | weight, target }
+    goalProgress: (link) => {
+      const v = link.variation || '', rows = [];
+      categories.forEach(cat => (data[cat] || []).forEach(e => {
+        if (!sameExName(e.exercise, link.exercise)) return;
+        (e.sets || []).forEach(s => {
+          if (!s || typeof s !== 'object') return;
+          if (!(v === '' || (v === '__none__' ? !setVar(s) : setVar(s) === v))) return;
+          if (link.metric === 'weight') { const kg = Number(s.kg); if (kg > 0 && !s.formBroke) rows.push({ date: e.date, value: kg }); }
+          else if (link.metric === 'hold') { if (e.isometric) rows.push({ date: e.date, value: Shared.cleanReps(s) }); }
+          else if (!e.isometric) rows.push({ date: e.date, value: Shared.cleanReps(s) });
+        });
+        if (link.metric === 'hold' && e.isometric && (v === '' || v === '__none__')) (e.attempts || []).forEach(a => { const n = Number(a); if (n > 0) rows.push({ date: e.date, value: n }); });
+      }));
+      rows.sort((a, b) => a.date.localeCompare(b.date));
+      let best = null, bestDate = null, reachedDate = null;
+      rows.forEach(r => {
+        if (r.value > 0 && (best === null || r.value > best)) { best = r.value; bestDate = r.date; }
+        if (reachedDate === null && r.value >= link.target) reachedDate = r.date;
+      });
+      return { best, bestDate, reachedDate };
+    },
     refreshVariations: () => { updateMetricsSection(currentExerciseName()); renderModifiers(); },
     listExercisesForVariations: () => listExercisesForVariations(),
     setCustomVariations: (cat, name, list) => setCustomVariations(cat, name, list),
